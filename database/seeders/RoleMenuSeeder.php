@@ -1,0 +1,56 @@
+<?php
+namespace Database\Seeders;
+use App\Models\Menu;
+use App\Models\Role;
+use Illuminate\Database\Seeder;
+class RoleMenuSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $menus = [
+            ['name' => 'Dashboard',           'slug' => 'dashboard',   'url' => '/',          'icon' => 'bx bx-home-smile',       'group_label' => null,               'urutan' => 1],
+            ['name' => 'Analitik',            'slug' => 'analytics',   'url' => 'analytics',  'icon' => 'bx bx-bar-chart-alt-2',  'group_label' => null,               'urutan' => 2],
+            ['name' => 'Cerita',              'slug' => 'cerita',      'url' => 'cerita',     'icon' => 'bx bx-book-open',        'group_label' => 'Manajemen Konten', 'urutan' => 3],
+            ['name' => 'Kategori',            'slug' => 'kategori',    'url' => 'kategori',   'icon' => 'bx bx-category',         'group_label' => 'Manajemen Konten', 'urutan' => 4],
+            ['name' => 'Slider',              'slug' => 'slider',      'url' => 'slider',     'icon' => 'bx bx-image-alt',        'group_label' => 'Manajemen Konten', 'urutan' => 5],
+            ['name' => 'Notifikasi',          'slug' => 'notifikasi',  'url' => 'notifikasi', 'icon' => 'bx bx-bell',             'group_label' => 'Master Data Mobile',      'urutan' => 6],
+            ['name' => 'Action',              'slug' => 'action',      'url' => 'action',     'icon' => 'bx bx-list-check',       'group_label' => 'Master Data Mobile',      'urutan' => 7],
+            ['name' => 'Versi Aplikasi',      'slug' => 'versi',       'url' => 'versi',      'icon' => 'bx bx-code-block',       'group_label' => 'Master Data Mobile',      'urutan' => 8],
+            ['name' => 'Manajemen Pengguna',  'slug' => 'pengguna',    'url' => 'pengguna',   'icon' => 'bx bx-group',            'group_label' => 'Pengguna',         'urutan' => 9],
+            ['name' => 'Manajemen Roles',     'slug' => 'roles',       'url' => 'roles',      'icon' => 'bx bx-shield-quarter',   'group_label' => 'Pengguna',         'urutan' => 10],
+            ['name' => 'Profil Saya',         'slug' => 'profile',     'url' => 'profile',    'icon' => 'bx bx-user-circle',      'group_label' => 'Akun',             'urutan' => 11],
+        ];
+        foreach ($menus as $menu) {
+            Menu::updateOrCreate(['slug' => $menu['slug']], $menu);
+        }
+        $superAdmin = Role::firstOrCreate(
+            ['name' => 'Super Admin'],
+            ['description' => 'Akses penuh ke semua menu', 'is_super_admin' => true]
+        );
+        $allMenuIds = Menu::pluck('id');
+        $sync = [];
+        foreach ($allMenuIds as $id) {
+            $sync[$id] = [
+                'can_view'   => true,
+                'can_insert' => true,
+                'can_update' => true,
+                'can_delete' => true,
+            ];
+        }
+        $superAdmin->menus()->sync($sync);
+        $viewer = Role::firstOrCreate(
+            ['name' => 'Viewer'],
+            ['description' => 'Hanya dapat melihat data', 'is_super_admin' => false]
+        );
+        $viewOnly = [];
+        foreach ($allMenuIds as $id) {
+            $viewOnly[$id] = [
+                'can_view'   => true,
+                'can_insert' => false,
+                'can_update' => false,
+                'can_delete' => false,
+            ];
+        }
+        $viewer->menus()->sync($viewOnly);
+    }
+}

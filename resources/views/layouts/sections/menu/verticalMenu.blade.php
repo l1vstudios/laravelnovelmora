@@ -1,0 +1,90 @@
+@php
+  use Illuminate\Support\Facades\Route;
+  $menuGroups = [];
+  $currentGroup = ['header' => null, 'items' => []];
+  foreach ($menuData[0]->menu as $item) {
+      if (isset($item->menuHeader)) {
+          $menuGroups[] = $currentGroup;
+          $currentGroup = ['header' => $item->menuHeader, 'items' => []];
+      } else {
+          $currentGroup['items'][] = $item;
+      }
+  }
+  $menuGroups[] = $currentGroup;
+@endphp
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+  <div class="app-brand demo">
+    <a href="{{ url('/') }}" class="app-brand-link">
+      <span class="app-brand-text demo menu-text fw-bold d-flex justify-content-center w-100">
+        <img src="{{ asset('assets/img/novelsidebar.png') }}" alt="Logo" style="width: 180px; height: auto;">
+      </span>
+    </a>
+    <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
+      <i class="icon-base bx bx-chevron-left icon-sm d-flex align-items-center justify-content-center"></i>
+    </a>
+  </div>
+  <div class="menu-divider mt-0"></div>
+  <div class="menu-inner-shadow"></div>
+  <ul class="menu-inner py-1">
+    @foreach ($menuGroups as $group)
+      @php
+        $groupHasAccess = collect($group['items'])->some(function ($m) use ($menuAllowedSlugs) {
+            $slug = $m->slug ?? null;
+            return is_null($menuAllowedSlugs) || (is_string($slug) && isset($menuAllowedSlugs[$slug]));
+        });
+      @endphp
+      @if ($group['header'] !== null && $groupHasAccess)
+        <li class="menu-header small text-uppercase">
+          <span class="menu-header-text">{{ __($group['header']) }}</span>
+        </li>
+      @endif
+      @foreach ($group['items'] as $menu)
+        @php
+          $slug = $menu->slug ?? null;
+          $hasAccess = is_null($menuAllowedSlugs) || (is_string($slug) && isset($menuAllowedSlugs[$slug]));
+          $activeClass = null;
+          $currentRouteName = Route::currentRouteName();
+          if ($hasAccess) {
+              if ($currentRouteName === $menu->slug) {
+                  $activeClass = 'active';
+              } elseif (isset($menu->submenu)) {
+                  if (gettype($menu->slug) === 'array') {
+                      foreach ($menu->slug as $s) {
+                          if (str_contains($currentRouteName, $s) && strpos($currentRouteName, $s) === 0) {
+                              $activeClass = 'active open';
+                          }
+                      }
+                  } else {
+                      if (
+                          str_contains($currentRouteName, $menu->slug) &&
+                          strpos($currentRouteName, $menu->slug) === 0
+                      ) {
+                          $activeClass = 'active open';
+                      }
+                  }
+              }
+          }
+        @endphp
+        @if ($hasAccess)
+          <li class="menu-item {{ $activeClass }}">
+            <a href="{{ isset($menu->url) ? url($menu->url) : 'javascript:void(0);' }}"
+              class="{{ isset($menu->submenu) ? 'menu-link menu-toggle' : 'menu-link' }}"
+              @if (isset($menu->target) and !empty($menu->target)) target="_blank" @endif>
+              @isset($menu->icon)
+                <i class="{{ $menu->icon }}"></i>
+              @endisset
+              <div>{{ isset($menu->name) ? __($menu->name) : '' }}</div>
+              @isset($menu->badge)
+                <div class="badge rounded-pill bg-{{ $menu->badge[0] }} text-uppercase ms-auto">{{ $menu->badge[1] }}
+                </div>
+              @endisset
+            </a>
+            @isset($menu->submenu)
+              @include('layouts.sections.menu.submenu', ['menu' => $menu->submenu])
+            @endisset
+          </li>
+        @endif
+      @endforeach
+    @endforeach
+  </ul>
+</aside>

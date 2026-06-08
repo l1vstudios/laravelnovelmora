@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(psql -U postgres -d novelmora -c \"UPDATE mst_menu SET group_label = 'Master Data Mobile' WHERE group_label = 'Master Data';\")"
+    ]
+  }
+}

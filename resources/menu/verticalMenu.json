@@ -1,0 +1,170 @@
+{
+  "menu": [
+    {
+      "url": "/",
+      "name": "Dashboard",
+      "icon": "menu-icon icon-base bx bx-home-smile",
+      "slug": "dashboard"
+    },
+    {
+      "url": "analytics",
+      "name": "Analitik",
+      "icon": "menu-icon icon-base bx bx-bar-chart-alt-2",
+      "slug": "analytics"
+    },
+    {
+      "menuHeader": "Manajemen Konten"
+    },
+    {
+      "name": "Cerita",
+      "icon": "menu-icon icon-base bx bx-book-open",
+      "slug": "cerita",
+      "submenu": [
+        {
+          "url": "cerita",
+          "name": "Semua Cerita",
+          "slug": "cerita-index"
+        },
+        {
+          "url": "cerita/create",
+          "name": "Tambah Cerita",
+          "slug": "cerita-create"
+        }
+      ]
+    },
+    {
+      "name": "Kategori",
+      "icon": "menu-icon icon-base bx bx-category",
+      "slug": "kategori",
+      "submenu": [
+        {
+          "url": "kategori",
+          "name": "Semua Kategori",
+          "slug": "kategori-index"
+        },
+        {
+          "url": "kategori/create",
+          "name": "Tambah Kategori",
+          "slug": "kategori-create"
+        }
+      ]
+    },
+    {
+      "name": "Slider",
+      "icon": "menu-icon icon-base bx bx-image-alt",
+      "slug": "slider",
+      "submenu": [
+        {
+          "url": "slider",
+          "name": "Semua Slider",
+          "slug": "slider-index"
+        },
+        {
+          "url": "slider/create",
+          "name": "Tambah Slider",
+          "slug": "slider-create"
+        }
+      ]
+    },
+    {
+      "menuHeader": "Master Data Mobile"
+    },
+    {
+      "name": "Notifikasi",
+      "icon": "menu-icon icon-base bx bx-bell",
+      "slug": "notifikasi",
+      "submenu": [
+        {
+          "url": "notifikasi",
+          "name": "Semua Notifikasi",
+          "slug": "notifikasi-index"
+        },
+        {
+          "url": "notifikasi/create",
+          "name": "Tambah Notifikasi",
+          "slug": "notifikasi-create"
+        }
+      ]
+    },
+    {
+      "name": "Action",
+      "icon": "menu-icon icon-base bx bx-list-check",
+      "slug": "action",
+      "submenu": [
+        {
+          "url": "action",
+          "name": "Semua Action",
+          "slug": "action-index"
+        },
+        {
+          "url": "action/create",
+          "name": "Tambah Action",
+          "slug": "action-create"
+        }
+      ]
+    },
+    {
+      "name": "Versi Aplikasi",
+      "icon": "menu-icon icon-base bx bx-code-block",
+      "slug": "versi",
+      "submenu": [
+        {
+          "url": "versi",
+          "name": "Semua Versi",
+          "slug": "versi-index"
+        },
+        {
+          "url": "versi/create",
+          "name": "Tambah Versi",
+          "slug": "versi-create"
+        }
+      ]
+    },
+    {
+      "menuHeader": "Pengguna"
+    },
+    {
+      "name": "Manajemen Pengguna",
+      "icon": "menu-icon icon-base bx bx-group",
+      "slug": "pengguna",
+      "submenu": [
+        {
+          "url": "pengguna",
+          "name": "Semua Pengguna",
+          "slug": "pengguna-index"
+        },
+        {
+          "url": "pengguna/create",
+          "name": "Tambah Pengguna",
+          "slug": "pengguna-create"
+        }
+      ]
+    },
+    {
+      "name": "Manajemen Roles",
+      "icon": "menu-icon icon-base bx bx-shield-quarter",
+      "slug": "roles",
+      "submenu": [
+        {
+          "url": "roles",
+          "name": "Semua Roles",
+          "slug": "roles-index"
+        },
+        {
+          "url": "roles/create",
+          "name": "Tambah Role",
+          "slug": "roles-create"
+        }
+      ]
+    },
+    {
+      "menuHeader": "Akun"
+    },
+    {
+      "url": "profile",
+      "name": "Profil Saya",
+      "icon": "menu-icon icon-base bx bx-user-circle",
+      "slug": "profile"
+    }
+  ]
+}
