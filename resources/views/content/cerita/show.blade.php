@@ -128,9 +128,9 @@
             <div class="card-header d-flex align-items-center justify-content-between py-3">
                 <span class="fw-medium text-capitalize">{{ $key }}</span>
                 @if($isLocked)
-                    <span class="badge bg-label-warning"><i class="icon-base bx bx-lock me-1"></i> Terkunci</span>
+                    <span class="badge bg-label-warning"><i class="icon-base bx bx-lock me-1"></i> Locked</span>
                 @else
-                    <span class="badge bg-label-success"><i class="icon-base bx bx-lock-open me-1"></i> Bebas</span>
+                    <span class="badge bg-label-success"><i class="icon-base bx bx-lock-open me-1"></i> Open</span>
                 @endif
             </div>
             <div class="card-body">
@@ -149,9 +149,9 @@
                     <a href="{{ $ad->target_url }}" target="_blank" rel="noopener" class="d-inline-block">
                 @endif
                 @if($ad->media_type === 'video')
-                    <video src="{{ $ad->media_url }}" class="rounded w-100 bg-label-secondary" style="max-height:280px;object-fit:contain;" controls></video>
+                    <video src="{{ $ad->media_src }}" class="rounded w-100 bg-label-secondary" style="max-height:280px;object-fit:contain;" controls></video>
                 @else
-                    <img src="{{ $ad->media_url }}" alt="{{ $ad->title }}" class="rounded img-fluid" style="max-height:280px;" onerror="this.src='https://placehold.co/640x280'">
+                    <img src="{{ $ad->media_src }}" alt="{{ $ad->title }}" class="rounded img-fluid" style="max-height:280px;" onerror="this.src='https://placehold.co/640x280'">
                 @endif
                 @if($ad->target_url)
                     </a>

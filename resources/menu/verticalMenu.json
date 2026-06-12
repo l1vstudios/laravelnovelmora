@@ -87,6 +87,57 @@
       "menuHeader": "Master Data Mobile"
     },
     {
+      "name": "Reward Type",
+      "icon": "menu-icon icon-base bx bx-purchase-tag",
+      "slug": "reward-types",
+      "submenu": [
+        {
+          "url": "reward-types",
+          "name": "Semua Type",
+          "slug": "reward-types-index"
+        },
+        {
+          "url": "reward-types/create",
+          "name": "Tambah Type",
+          "slug": "reward-types-create"
+        }
+      ]
+    },
+    {
+      "name": "Reward Video",
+      "icon": "menu-icon icon-base bx bx-video",
+      "slug": "reward-videos",
+      "submenu": [
+        {
+          "url": "reward-videos",
+          "name": "Semua Video",
+          "slug": "reward-videos-index"
+        },
+        {
+          "url": "reward-videos/create",
+          "name": "Tambah Video",
+          "slug": "reward-videos-create"
+        }
+      ]
+    },
+    {
+      "name": "Reward Harian",
+      "icon": "menu-icon icon-base bx bx-coin-stack",
+      "slug": "daily-rewards",
+      "submenu": [
+        {
+          "url": "daily-rewards",
+          "name": "Semua Reward",
+          "slug": "daily-rewards-index"
+        },
+        {
+          "url": "daily-rewards/create",
+          "name": "Tambah Reward",
+          "slug": "daily-rewards-create"
+        }
+      ]
+    },
+    {
       "name": "Notifikasi",
       "icon": "menu-icon icon-base bx bx-bell",
       "slug": "notifikasi",

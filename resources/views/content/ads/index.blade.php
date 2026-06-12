@@ -63,9 +63,9 @@
                             <td>{{ $loop->iteration + ($ads->currentPage() - 1) * $ads->perPage() }}</td>
                             <td>
                                 @if($ad->media_type === 'video')
-                                    <video src="{{ $ad->media_url }}" muted style="width:90px;height:54px;object-fit:cover;" class="rounded bg-label-secondary"></video>
+                                    <video src="{{ $ad->media_src }}" muted style="width:90px;height:54px;object-fit:cover;" class="rounded bg-label-secondary"></video>
                                 @else
-                                    <img src="{{ $ad->media_url }}" alt="{{ $ad->title }}" class="rounded" style="width:90px;height:54px;object-fit:cover;" onerror="this.src='https://placehold.co/90x54'">
+                                    <img src="{{ $ad->media_src }}" alt="{{ $ad->title }}" class="rounded" style="width:90px;height:54px;object-fit:cover;" onerror="this.src='https://placehold.co/90x54'">
                                 @endif
                             </td>
                             <td>

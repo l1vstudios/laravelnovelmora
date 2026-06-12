@@ -30,9 +30,9 @@
                 <div class="row g-5">
                     <div class="col-md-6">
                         @if($ad->media_type === 'video')
-                            <video src="{{ $ad->media_url }}" class="rounded w-100 bg-label-secondary" style="max-height:320px;object-fit:contain;" controls></video>
+                            <video src="{{ $ad->media_src }}" class="rounded w-100 bg-label-secondary" style="max-height:320px;object-fit:contain;" controls></video>
                         @else
-                            <img src="{{ $ad->media_url }}" alt="{{ $ad->title }}" class="rounded img-fluid" style="max-height:320px;" onerror="this.src='https://placehold.co/640x360'">
+                            <img src="{{ $ad->media_src }}" alt="{{ $ad->title }}" class="rounded img-fluid" style="max-height:320px;" onerror="this.src='https://placehold.co/640x360'">
                         @endif
                     </div>
                     <div class="col-md-6">
@@ -47,7 +47,10 @@
                             </div>
                             <div class="col-12">
                                 <small class="text-muted d-block mb-1">URL Media</small>
-                                <span class="text-break">{{ $ad->media_url }}</span>
+                                <span class="text-break">{{ $ad->media_path ? $ad->media_src : $ad->media_url }}</span>
+                                @if($ad->media_path)
+                                    <span class="badge bg-label-primary ms-2">Upload</span>
+                                @endif
                             </div>
                             <div class="col-12">
                                 <small class="text-muted d-block mb-1">URL Direct Link</small>

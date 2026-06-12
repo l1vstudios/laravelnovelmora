@@ -10,7 +10,7 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    protected $fillable = ['name', 'email', 'password', 'role_id'];
+    protected $fillable = ['name', 'email', 'password', 'role_id', 'coin_balance'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -25,5 +25,10 @@ class User extends Authenticatable
     public function role()
     {
         return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function dailyRewardClaims()
+    {
+        return $this->hasMany(DailyRewardClaim::class);
     }
 }

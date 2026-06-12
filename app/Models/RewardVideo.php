@@ -6,16 +6,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
-class Ad extends Model
+class RewardVideo extends Model
 {
-    protected $table = 'mst_ads';
+    protected $table = 'mst_reward_videos';
 
     protected $fillable = [
         'title',
-        'media_type',
-        'media_url',
-        'media_path',
-        'target_url',
+        'video_url',
+        'video_path',
         'status',
     ];
 
@@ -28,17 +26,17 @@ class Ad extends Model
         return $query->where('status', true);
     }
 
-    public function placements()
+    public function schedules()
     {
-        return $this->hasMany(CeritaAd::class, 'ad_id');
+        return $this->hasMany(DailyRewardVideoSchedule::class, 'reward_video_id');
     }
 
-    public function getMediaSrcAttribute(): string
+    public function getVideoSrcAttribute(): string
     {
-        if ($this->media_path) {
-            return Storage::url($this->media_path);
+        if ($this->video_path) {
+            return Storage::url($this->video_path);
         }
 
-        return $this->media_url;
+        return $this->video_url;
     }
 }

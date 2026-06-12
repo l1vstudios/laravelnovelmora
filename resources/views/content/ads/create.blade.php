@@ -3,7 +3,7 @@
 
 @section('content')
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-9">
         <div class="card">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <h5 class="mb-0">Tambah Ads</h5>
@@ -13,7 +13,7 @@
                 @if($errors->any())
                 <div class="alert alert-danger alert-dismissible mb-6"><ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
                 @endif
-                <form action="{{ route('ads.store') }}" method="POST">
+                <form action="{{ route('ads.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="row g-5">
                         <div class="col-md-8">
@@ -30,9 +30,16 @@
                             @error('media_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">
-                            <label class="form-label">URL Media <span class="text-danger">*</span></label>
+                            <label class="form-label">Upload File</label>
+                            <input type="file" name="media_file" id="media_file" class="form-control @error('media_file') is-invalid @enderror" accept="image/jpg,image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime">
+                            @error('media_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <small class="text-muted">Gambar maks 5MB, video maks 20MB.</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">URL Media</label>
                             <input type="url" name="media_url" id="media_url" class="form-control @error('media_url') is-invalid @enderror" value="{{ old('media_url') }}" placeholder="https://...">
                             @error('media_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <small class="text-muted">Kosongkan jika memakai upload file.</small>
                         </div>
                         <div class="col-12">
                             <label class="form-label">URL Direct Link</label>
@@ -52,6 +59,7 @@
                                 <label class="form-check-label" for="status">Status Aktif</label>
                             </div>
                         </div>
+                        @include('content.ads._placements', ['ceritas' => $ceritas])
                     </div>
                     <div class="d-flex gap-3 mt-6">
                         <button type="submit" class="btn btn-primary"><i class="icon-base bx bx-save me-1"></i> Simpan</button>
@@ -64,7 +72,9 @@
 </div>
 <script>
 function updateAdsPreview() {
-    const url = document.getElementById('media_url').value;
+    const file = document.getElementById('media_file').files[0];
+    const urlInput = document.getElementById('media_url');
+    const url = file ? URL.createObjectURL(file) : urlInput.value;
     const type = document.getElementById('media_type').value;
     const wrapper = document.getElementById('preview-wrapper');
     const media = document.getElementById('preview-media');
@@ -81,6 +91,10 @@ function updateAdsPreview() {
         : `<img src="${url}" alt="Preview" class="rounded img-fluid" style="max-height:260px;" onerror="this.style.display='none'">`;
 }
 
+document.getElementById('media_file').addEventListener('change', function() {
+    if (this.files.length) document.getElementById('media_url').value = '';
+    updateAdsPreview();
+});
 document.getElementById('media_url').addEventListener('input', updateAdsPreview);
 document.getElementById('media_type').addEventListener('change', updateAdsPreview);
 updateAdsPreview();

@@ -60,7 +60,7 @@
                 <div class="form-check form-switch mb-0">
                     <input class="form-check-input chapter-lock" type="checkbox" value="${chapterCount}"
                         name="locked_chapters[]" ${locked ? 'checked' : ''} id="lock_${chapterCount}">
-                    <label class="form-check-label" for="lock_${chapterCount}">Kunci</label>
+                    <label class="form-check-label" for="lock_${chapterCount}">Locked</label>
                 </div>
                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeChapter(this)">
                     <i class="icon-base bx bx-trash"></i>

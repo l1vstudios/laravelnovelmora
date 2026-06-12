@@ -8,14 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('mst_ads')) {
-            Schema::create('mst_ads', function (Blueprint $table) {
+        if (!Schema::hasTable('mst_reward_videos')) {
+            Schema::create('mst_reward_videos', function (Blueprint $table) {
                 $table->id();
                 $table->string('title');
-                $table->string('media_type', 20);
-                $table->string('media_url', 2048);
-                $table->string('media_path')->nullable();
-                $table->string('target_url', 2048)->nullable();
+                $table->string('video_url', 2048);
+                $table->string('video_path')->nullable();
                 $table->boolean('status')->default(true);
                 $table->timestamps();
             });
@@ -24,6 +22,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('mst_ads');
+        Schema::dropIfExists('mst_reward_videos');
     }
 };

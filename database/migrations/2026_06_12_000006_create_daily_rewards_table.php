@@ -8,13 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('mst_ads')) {
-            Schema::create('mst_ads', function (Blueprint $table) {
+        if (!Schema::hasTable('mst_daily_rewards')) {
+            Schema::create('mst_daily_rewards', function (Blueprint $table) {
                 $table->id();
+                $table->foreignId('reward_type_id')->constrained('mst_reward_types')->cascadeOnDelete();
                 $table->string('title');
-                $table->string('media_type', 20);
-                $table->string('media_url', 2048);
-                $table->string('media_path')->nullable();
+                $table->unsignedInteger('coin_reward')->default(0);
                 $table->string('target_url', 2048)->nullable();
                 $table->boolean('status')->default(true);
                 $table->timestamps();
@@ -24,6 +23,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('mst_ads');
+        Schema::dropIfExists('mst_daily_rewards');
     }
 };

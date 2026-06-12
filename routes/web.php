@@ -7,7 +7,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\CeritaController;
 use App\Http\Controllers\AdsController;
+use App\Http\Controllers\DailyRewardController;
 use App\Http\Controllers\KategoriController;
+use App\Http\Controllers\RewardTypeController;
+use App\Http\Controllers\RewardVideoController;
 use App\Http\Controllers\SliderController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\MstActionController;
@@ -48,6 +51,17 @@ Route::middleware('auth')->group(function () {
             ->parameters(['slider' => 'slider']);
 
         Route::resource('ads', AdsController::class);
+
+        Route::resource('reward-types', RewardTypeController::class)
+            ->parameters(['reward-types' => 'rewardType']);
+
+        Route::resource('reward-videos', RewardVideoController::class)
+            ->parameters(['reward-videos' => 'rewardVideo']);
+
+        Route::resource('daily-rewards', DailyRewardController::class)
+            ->parameters(['daily-rewards' => 'dailyReward']);
+        Route::post('daily-rewards/{dailyReward}/claim', [DailyRewardController::class, 'claim'])
+            ->name('daily-rewards.claim');
 
         // Master Data
         Route::resource('notifikasi', NotifikasiController::class)
