@@ -1,5 +1,5 @@
 @extends('layouts/contentNavbarLayout')
-@section('title', 'Detail Reward Video')
+@section('title', 'Detail Master Video')
 
 @section('content')
 <div class="row">

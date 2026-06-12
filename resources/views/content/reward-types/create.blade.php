@@ -1,12 +1,12 @@
 @extends('layouts/contentNavbarLayout')
-@section('title', 'Tambah Reward Type')
+@section('title', 'Tambah Master Type')
 
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-7">
         <div class="card">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <h5 class="mb-0">Tambah Reward Type</h5>
+                <h5 class="mb-0">Tambah Master Type</h5>
                 <a href="{{ route('reward-types.index') }}" class="btn btn-outline-secondary btn-sm"><i class="icon-base bx bx-arrow-back me-1"></i> Kembali</a>
             </div>
             <div class="card-body">

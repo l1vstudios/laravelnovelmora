@@ -1,12 +1,12 @@
 @extends('layouts/contentNavbarLayout')
-@section('title', 'Detail Reward Type')
+@section('title', 'Detail Master Type')
 
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-7">
         <div class="card">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <h5 class="mb-0">Detail Reward Type</h5>
+                <h5 class="mb-0">Detail Master Type</h5>
                 <div class="d-flex gap-2">
                     <a href="{{ route('reward-types.edit', $rewardType) }}" class="btn btn-primary btn-sm"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
                     <a href="{{ route('reward-types.index') }}" class="btn btn-outline-secondary btn-sm"><i class="icon-base bx bx-arrow-back me-1"></i> Kembali</a>

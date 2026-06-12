@@ -1,5 +1,5 @@
 @extends('layouts/contentNavbarLayout')
-@section('title', 'Reward Type')
+@section('title', 'Master Type')
 
 @section('content')
 <div class="row">
@@ -7,7 +7,7 @@
         @if(session('success'))<div class="alert alert-success alert-dismissible mb-6">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>@endif
         <div class="card">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <h5 class="mb-0">Master Reward Type</h5>
+                <h5 class="mb-0">Master Type</h5>
                 <a href="{{ route('reward-types.create') }}" class="btn btn-primary"><i class="icon-base bx bx-plus me-1"></i> Tambah Type</a>
             </div>
             <div class="card-body border-bottom pb-4 pt-3">
@@ -43,13 +43,13 @@
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{ route('reward-types.show', $type) }}"><i class="icon-base bx bx-show me-1"></i> Detail</a>
                                         <a class="dropdown-item" href="{{ route('reward-types.edit', $type) }}"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        <form action="{{ route('reward-types.destroy', $type) }}" method="POST" data-confirm="Hapus reward type ini?">@csrf @method('DELETE')<button class="dropdown-item text-danger"><i class="icon-base bx bx-trash me-1"></i> Hapus</button></form>
+                                        <form action="{{ route('reward-types.destroy', $type) }}" method="POST" data-confirm="Hapus master type ini?">@csrf @method('DELETE')<button class="dropdown-item text-danger"><i class="icon-base bx bx-trash me-1"></i> Hapus</button></form>
                                     </div>
                                 </div>
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="6" class="text-center py-6 text-muted">Belum ada reward type.</td></tr>
+                        <tr><td colspan="6" class="text-center py-6 text-muted">Belum ada master type.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

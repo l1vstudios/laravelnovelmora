@@ -87,7 +87,7 @@
       "menuHeader": "Master Data Mobile"
     },
     {
-      "name": "Reward Type",
+      "name": "Master Type",
       "icon": "menu-icon icon-base bx bx-purchase-tag",
       "slug": "reward-types",
       "submenu": [
@@ -104,7 +104,7 @@
       ]
     },
     {
-      "name": "Reward Video",
+      "name": "Master Video",
       "icon": "menu-icon icon-base bx bx-video",
       "slug": "reward-videos",
       "submenu": [

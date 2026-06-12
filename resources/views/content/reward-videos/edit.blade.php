@@ -1,12 +1,12 @@
 @extends('layouts/contentNavbarLayout')
-@section('title', 'Edit Reward Video')
+@section('title', 'Edit Master Video')
 
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <h5 class="mb-0">Edit Reward Video</h5>
+                <h5 class="mb-0">Edit Master Video</h5>
                 <a href="{{ route('reward-videos.index') }}" class="btn btn-outline-secondary btn-sm"><i class="icon-base bx bx-arrow-back me-1"></i> Kembali</a>
             </div>
             <div class="card-body">

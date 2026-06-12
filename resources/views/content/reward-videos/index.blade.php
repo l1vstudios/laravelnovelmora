@@ -1,5 +1,5 @@
 @extends('layouts/contentNavbarLayout')
-@section('title', 'Reward Video')
+@section('title', 'Master Video')
 
 @section('content')
 <div class="row">
@@ -7,7 +7,7 @@
         @if(session('success'))<div class="alert alert-success alert-dismissible mb-6">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>@endif
         <div class="card">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <h5 class="mb-0">Master Reward Video</h5>
+                <h5 class="mb-0">Master Video</h5>
                 <a href="{{ route('reward-videos.create') }}" class="btn btn-primary"><i class="icon-base bx bx-plus me-1"></i> Tambah Video</a>
             </div>
             <div class="card-body border-bottom pb-4 pt-3">
@@ -46,13 +46,13 @@
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{ route('reward-videos.show', $video) }}"><i class="icon-base bx bx-show me-1"></i> Detail</a>
                                         <a class="dropdown-item" href="{{ route('reward-videos.edit', $video) }}"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        <form action="{{ route('reward-videos.destroy', $video) }}" method="POST" data-confirm="Hapus video reward ini?">@csrf @method('DELETE')<button class="dropdown-item text-danger"><i class="icon-base bx bx-trash me-1"></i> Hapus</button></form>
+                                        <form action="{{ route('reward-videos.destroy', $video) }}" method="POST" data-confirm="Hapus master video ini?">@csrf @method('DELETE')<button class="dropdown-item text-danger"><i class="icon-base bx bx-trash me-1"></i> Hapus</button></form>
                                     </div>
                                 </div>
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="6" class="text-center py-6 text-muted">Belum ada video reward.</td></tr>
+                        <tr><td colspan="6" class="text-center py-6 text-muted">Belum ada master video.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
