@@ -78,7 +78,7 @@
     const initialPlacements = @json($initialPlacements);
     const selected = new Map();
     let selectedStory = null;
-    let selectedChapter = null;
+    let selectedChapters = new Set();
 
     const storyInput = document.getElementById('placement-story-search');
     const storyMenu = document.getElementById('placement-story-menu');
@@ -143,9 +143,11 @@
 
         chapterMenu.innerHTML = chapters.length
             ? chapters.map((item) => `
-                <button type="button" class="dropdown-item" data-chapter="${item.chapter}">
-                    ${escapeHtml(item.label)}
-                </button>
+                <label class="dropdown-item d-flex align-items-center gap-2 mb-0" data-chapter-option="${item.chapter}">
+                    <input type="checkbox" class="form-check-input m-0 placement-chapter-check"
+                        value="${item.chapter}" ${selectedChapters.has(item.chapter) ? 'checked' : ''}>
+                    <span>${escapeHtml(item.label)}</span>
+                </label>
             `).join('')
             : '<span class="dropdown-item-text text-muted">Chapter tidak ditemukan.</span>';
 
@@ -167,11 +169,23 @@
     }
 
     function resetChapterPicker() {
-        selectedChapter = null;
+        selectedChapters = new Set();
         chapterInput.value = '';
         chapterInput.disabled = !selectedStory;
-        chapterInput.placeholder = selectedStory ? 'Cari chapter...' : 'Pilih novel dulu';
+        chapterInput.placeholder = selectedStory ? 'Cari dan pilih chapter...' : 'Pilih novel dulu';
         chapterMenu.innerHTML = '';
+    }
+
+    function updateChapterInputLabel() {
+        if (!selectedChapters.size) {
+            chapterInput.value = '';
+            return;
+        }
+
+        const chapters = Array.from(selectedChapters).sort((a, b) => a - b);
+        chapterInput.value = chapters.length === 1
+            ? `Setelah Chapter ${chapters[0]}`
+            : `${chapters.length} chapter dipilih`;
     }
 
     initialPlacements.forEach((item) => {
@@ -202,31 +216,38 @@
 
     chapterInput.addEventListener('focus', () => renderChapterMenu(chapterInput.value));
     chapterInput.addEventListener('input', () => {
-        selectedChapter = null;
         renderChapterMenu(chapterInput.value);
     });
 
-    chapterMenu.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-chapter]');
-        if (!button) return;
+    chapterMenu.addEventListener('change', (event) => {
+        const checkbox = event.target.closest('.placement-chapter-check');
+        if (!checkbox) return;
 
-        selectedChapter = Number(button.dataset.chapter);
-        chapterInput.value = `Setelah Chapter ${selectedChapter}`;
-        chapterMenu.classList.remove('show');
+        const chapter = Number(checkbox.value);
+        if (checkbox.checked) {
+            selectedChapters.add(chapter);
+        } else {
+            selectedChapters.delete(chapter);
+        }
+
+        updateChapterInputLabel();
     });
 
     addButton.addEventListener('click', () => {
-        if (!selectedStory || !selectedChapter) {
+        if (!selectedStory || !selectedChapters.size) {
             return;
         }
 
-        selected.set(key(selectedStory.id, selectedChapter), {
-            story_id: selectedStory.id,
-            story_title: selectedStory.title,
-            chapter: selectedChapter,
+        selectedChapters.forEach((chapter) => {
+            selected.set(key(selectedStory.id, chapter), {
+                story_id: selectedStory.id,
+                story_title: selectedStory.title,
+                chapter,
+            });
         });
 
         renderSelected();
+        resetChapterPicker();
     });
 
     selectedWrap.addEventListener('click', (event) => {
