@@ -26,4 +26,9 @@ class Cerita extends Model
     {
         return $this->belongsTo(Kategori::class, 'id_kategori');
     }
+
+    public function adPlacements()
+    {
+        return $this->hasMany(CeritaAd::class, 'cerita_id')->orderBy('after_chapter');
+    }
 }

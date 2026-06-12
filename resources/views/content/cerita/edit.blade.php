@@ -13,13 +13,47 @@ function previewCover(input) {
     }
 }
 
+const availableAds = @json($ads->map(fn($ad) => ['id' => $ad->id, 'title' => $ad->title, 'media_type' => $ad->media_type])->values());
+const adPlacements = @json($cerita->adPlacements->groupBy('after_chapter')->map(fn($items) => $items->pluck('ad_id')->values())->toArray());
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function renderAdsOptions(chapterNumber, selectedAds = []) {
+    if (!availableAds.length) {
+        return '<small class="text-muted">Belum ada ads aktif.</small>';
+    }
+
+    const selected = selectedAds.map(String);
+
+    return availableAds.map((ad) => {
+        const checked = selected.includes(String(ad.id)) ? 'checked' : '';
+        const label = `${escapeHtml(ad.title)} (${ad.media_type === 'video' ? 'Video' : 'Gambar'})`;
+
+        return `
+            <div class="form-check form-check-inline mb-2">
+                <input class="form-check-input chapter-ad" type="checkbox"
+                    name="ads_after_chapters[${chapterNumber}][]" value="${ad.id}"
+                    id="ad_${chapterNumber}_${ad.id}" ${checked}>
+                <label class="form-check-label" for="ad_${chapterNumber}_${ad.id}">${label}</label>
+            </div>`;
+    }).join('');
+}
+
 let chapterCount = 0;
 
-function addChapter(content = '', locked = false) {
+function addChapter(content = '', locked = false, selectedAds = []) {
     chapterCount++;
     const container = document.getElementById('chapters-container');
     const div = document.createElement('div');
     div.className = 'card mb-4 chapter-row border';
+    const adsMarkup = renderAdsOptions(chapterCount, selectedAds);
     div.innerHTML = `
         <div class="card-header d-flex align-items-center justify-content-between py-3">
             <span class="fw-medium">Chapter ${chapterCount}</span>
@@ -37,6 +71,10 @@ function addChapter(content = '', locked = false) {
         <div class="card-body">
             <textarea name="chapters[]" rows="5" class="form-control"
                 placeholder="Tulis isi chapter ${chapterCount}...">${content}</textarea>
+            <div class="mt-4 pt-4 border-top">
+                <label class="form-label mb-2">Sisipkan Ads setelah chapter ini</label>
+                <div class="d-flex flex-wrap gap-3">${adsMarkup}</div>
+            </div>
         </div>`;
     container.appendChild(div);
     renumberChapters();
@@ -55,17 +93,24 @@ function renumberChapters() {
         lock.value = num;
         lock.id = `lock_${num}`;
         row.querySelector('label').setAttribute('for', `lock_${num}`);
+        row.querySelector('textarea').placeholder = `Tulis isi chapter ${num}...`;
+        row.querySelectorAll('.chapter-ad').forEach((adInput) => {
+            adInput.name = `ads_after_chapters[${num}][]`;
+            adInput.id = `ad_${num}_${adInput.value}`;
+            const adLabel = row.querySelector(`label[for^="ad_"][for$="_${adInput.value}"]`);
+            if (adLabel) adLabel.setAttribute('for', adInput.id);
+        });
     });
     chapterCount = document.querySelectorAll('.chapter-row').length;
 }
 
-// Load existing chapters on page load
 window.addEventListener('DOMContentLoaded', function () {
     const isiCerita = @json($cerita->isi_cerita ?? []);
     const lockData  = @json($cerita->lock ?? []);
     Object.keys(isiCerita).forEach(function (key, i) {
         const isLocked = lockData[key] === true;
-        addChapter(isiCerita[key], isLocked);
+        const chapterNumber = i + 1;
+        addChapter(isiCerita[key], isLocked, adPlacements[chapterNumber] || []);
     });
 });
 </script>

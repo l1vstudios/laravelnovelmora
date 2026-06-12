@@ -6,6 +6,7 @@ use App\Http\Controllers\GeneralController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\CeritaController;
+use App\Http\Controllers\AdsController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\SliderController;
 use App\Http\Controllers\NotifikasiController;
@@ -45,6 +46,8 @@ Route::middleware('auth')->group(function () {
 
         Route::resource('slider', SliderController::class)
             ->parameters(['slider' => 'slider']);
+
+        Route::resource('ads', AdsController::class);
 
         // Master Data
         Route::resource('notifikasi', NotifikasiController::class)

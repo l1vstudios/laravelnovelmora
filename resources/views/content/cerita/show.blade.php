@@ -113,9 +113,17 @@
 
         {{-- Chapters --}}
         @if($cerita->isi_cerita)
+        @php
+            $adsByChapter = $cerita->adPlacements
+                ->filter(fn($placement) => $placement->ad && $placement->ad->status)
+                ->groupBy('after_chapter');
+        @endphp
         <h6 class="mb-4 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em;">Isi Cerita</h6>
         @foreach($cerita->isi_cerita as $key => $content)
-        @php $isLocked = ($cerita->lock[$key] ?? false) === true; @endphp
+        @php
+            $chapterNumber = $loop->iteration;
+            $isLocked = ($cerita->lock[$key] ?? false) === true;
+        @endphp
         <div class="card mb-4">
             <div class="card-header d-flex align-items-center justify-content-between py-3">
                 <span class="fw-medium text-capitalize">{{ $key }}</span>
@@ -129,6 +137,29 @@
                 <p class="mb-0" style="white-space: pre-line;">{{ $content }}</p>
             </div>
         </div>
+        @foreach($adsByChapter->get($chapterNumber, collect()) as $placement)
+        @php $ad = $placement->ad; @endphp
+        <div class="card mb-4 border border-primary">
+            <div class="card-header d-flex align-items-center justify-content-between py-3">
+                <span class="fw-medium">Ads setelah Chapter {{ $chapterNumber }}</span>
+                <span class="badge bg-label-{{ $ad->media_type === 'video' ? 'danger' : 'info' }}">{{ $ad->media_type === 'video' ? 'Video' : 'Gambar' }}</span>
+            </div>
+            <div class="card-body">
+                @if($ad->target_url)
+                    <a href="{{ $ad->target_url }}" target="_blank" rel="noopener" class="d-inline-block">
+                @endif
+                @if($ad->media_type === 'video')
+                    <video src="{{ $ad->media_url }}" class="rounded w-100 bg-label-secondary" style="max-height:280px;object-fit:contain;" controls></video>
+                @else
+                    <img src="{{ $ad->media_url }}" alt="{{ $ad->title }}" class="rounded img-fluid" style="max-height:280px;" onerror="this.src='https://placehold.co/640x280'">
+                @endif
+                @if($ad->target_url)
+                    </a>
+                @endif
+                <div class="mt-3 fw-medium">{{ $ad->title }}</div>
+            </div>
+        </div>
+        @endforeach
         @endforeach
         @else
         <div class="alert alert-info">Belum ada isi cerita.</div>

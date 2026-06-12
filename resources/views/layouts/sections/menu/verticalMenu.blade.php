@@ -16,7 +16,7 @@
   <div class="app-brand demo">
     <a href="{{ url('/') }}" class="app-brand-link">
       <span class="app-brand-text demo menu-text fw-bold d-flex justify-content-center w-100">
-        <img src="{{ asset('assets/img/novelsidebar.png') }}" alt="Logo" style="width: 180px; height: auto;">
+        <img src="{{ asset('assets/img/bacaanlogo2.png') }}" alt="Logo" style="width: 180px; height: auto;">
       </span>
     </a>
     <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">

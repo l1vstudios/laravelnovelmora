@@ -67,6 +67,23 @@
       ]
     },
     {
+      "name": "Ads",
+      "icon": "menu-icon icon-base bx bx-purchase-tag-alt",
+      "slug": "ads",
+      "submenu": [
+        {
+          "url": "ads",
+          "name": "Semua Ads",
+          "slug": "ads-index"
+        },
+        {
+          "url": "ads/create",
+          "name": "Tambah Ads",
+          "slug": "ads-create"
+        }
+      ]
+    },
+    {
       "menuHeader": "Master Data Mobile"
     },
     {

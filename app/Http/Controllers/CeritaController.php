@@ -1,6 +1,8 @@
 <?php
 namespace App\Http\Controllers;
+use App\Models\Ad;
 use App\Models\Cerita;
+use App\Models\CeritaAd;
 use App\Models\Kategori;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -26,14 +28,18 @@ class CeritaController extends Controller
     public function create()
     {
         $kategoris = Kategori::orderBy('default_title')->get();
-        return view('content.cerita.create', compact('kategoris'));
+        $ads = Ad::active()->orderBy('title')->get();
+        return view('content.cerita.create', compact('kategoris', 'ads'));
     }
     public function store(Request $request)
     {
         $request->validate([
-            'judul'       => 'required|string|max:255',
-            'id_kategori' => 'nullable|exists:mst_kategori,id',
-            'cover'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'judul'                   => 'required|string|max:255',
+            'id_kategori'             => 'nullable|exists:mst_kategori,id',
+            'cover'                   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ads_after_chapters'      => 'nullable|array',
+            'ads_after_chapters.*'    => 'nullable|array',
+            'ads_after_chapters.*.*'  => 'integer|exists:mst_ads,id',
         ]);
         $isiCerita = [];
         $lock = [];
@@ -46,7 +52,7 @@ class CeritaController extends Controller
         if ($request->hasFile('cover')) {
             $coverPath = $request->file('cover')->store('covers', 'public');
         }
-        Cerita::create([
+        $cerita = Cerita::create([
             'judul'         => $request->judul,
             'cover'         => $coverPath,
             'id_kategori'   => $request->id_kategori,
@@ -57,23 +63,36 @@ class CeritaController extends Controller
             'lock'          => $lock ?: null,
             'parts'         => count($isiCerita),
         ]);
+
+        $this->syncAdPlacements($cerita, $request, count($isiCerita));
+
         return redirect()->route('cerita.index')->with('success', 'Cerita berhasil ditambahkan.');
     }
     public function show(Cerita $cerita)
     {
+        $cerita->load('adPlacements.ad');
         return view('content.cerita.show', compact('cerita'));
     }
     public function edit(Cerita $cerita)
     {
         $kategoris = Kategori::orderBy('default_title')->get();
-        return view('content.cerita.edit', compact('cerita', 'kategoris'));
+        $cerita->load('adPlacements');
+        $selectedAdIds = $cerita->adPlacements->pluck('ad_id')->unique();
+        $ads = Ad::where('status', true)
+            ->orWhereIn('id', $selectedAdIds)
+            ->orderBy('title')
+            ->get();
+        return view('content.cerita.edit', compact('cerita', 'kategoris', 'ads'));
     }
     public function update(Request $request, Cerita $cerita)
     {
         $request->validate([
-            'judul'       => 'required|string|max:255',
-            'id_kategori' => 'nullable|exists:mst_kategori,id',
-            'cover'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'judul'                   => 'required|string|max:255',
+            'id_kategori'             => 'nullable|exists:mst_kategori,id',
+            'cover'                   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ads_after_chapters'      => 'nullable|array',
+            'ads_after_chapters.*'    => 'nullable|array',
+            'ads_after_chapters.*.*'  => 'integer|exists:mst_ads,id',
         ]);
         $isiCerita = [];
         $lock = [];
@@ -99,6 +118,7 @@ class CeritaController extends Controller
             $data['cover'] = $request->file('cover')->store('covers', 'public');
         }
         $cerita->update($data);
+        $this->syncAdPlacements($cerita, $request, count($isiCerita));
         return redirect()->route('cerita.index')->with('success', 'Cerita berhasil diperbarui.');
     }
     public function destroy(Cerita $cerita)
@@ -108,5 +128,35 @@ class CeritaController extends Controller
         }
         $cerita->delete();
         return redirect()->route('cerita.index')->with('success', 'Cerita berhasil dihapus.');
+    }
+
+    private function syncAdPlacements(Cerita $cerita, Request $request, int $chapterTotal): void
+    {
+        $cerita->adPlacements()->delete();
+
+        $placements = [];
+        $now = now();
+
+        foreach ($request->input('ads_after_chapters', []) as $chapter => $adIds) {
+            $chapterNumber = (int) $chapter;
+
+            if ($chapterNumber < 1 || $chapterNumber > $chapterTotal || !is_array($adIds)) {
+                continue;
+            }
+
+            foreach (array_unique($adIds) as $adId) {
+                $placements[] = [
+                    'cerita_id'      => $cerita->id,
+                    'ad_id'          => (int) $adId,
+                    'after_chapter'  => $chapterNumber,
+                    'created_at'     => $now,
+                    'updated_at'     => $now,
+                ];
+            }
+        }
+
+        if ($placements) {
+            CeritaAd::insert($placements);
+        }
     }
 }

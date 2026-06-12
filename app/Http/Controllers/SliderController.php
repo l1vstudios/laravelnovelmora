@@ -22,7 +22,7 @@ class SliderController extends Controller
     {
         $request->validate([
             'image_url' => 'required|url|max:255',
-            'status'    => 'boolean',
+            'status'    => 'required|boolean',
         ]);
 
         Slider::create([
@@ -47,7 +47,7 @@ class SliderController extends Controller
     {
         $request->validate([
             'image_url' => 'required|url|max:255',
-            'status'    => 'boolean',
+            'status'    => 'required|boolean',
         ]);
 
         $slider->update([

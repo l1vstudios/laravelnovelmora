@@ -13,12 +13,13 @@ class RoleMenuSeeder extends Seeder
             ['name' => 'Cerita',              'slug' => 'cerita',      'url' => 'cerita',     'icon' => 'bx bx-book-open',        'group_label' => 'Manajemen Konten', 'urutan' => 3],
             ['name' => 'Kategori',            'slug' => 'kategori',    'url' => 'kategori',   'icon' => 'bx bx-category',         'group_label' => 'Manajemen Konten', 'urutan' => 4],
             ['name' => 'Slider',              'slug' => 'slider',      'url' => 'slider',     'icon' => 'bx bx-image-alt',        'group_label' => 'Manajemen Konten', 'urutan' => 5],
-            ['name' => 'Notifikasi',          'slug' => 'notifikasi',  'url' => 'notifikasi', 'icon' => 'bx bx-bell',             'group_label' => 'Master Data Mobile',      'urutan' => 6],
-            ['name' => 'Action',              'slug' => 'action',      'url' => 'action',     'icon' => 'bx bx-list-check',       'group_label' => 'Master Data Mobile',      'urutan' => 7],
-            ['name' => 'Versi Aplikasi',      'slug' => 'versi',       'url' => 'versi',      'icon' => 'bx bx-code-block',       'group_label' => 'Master Data Mobile',      'urutan' => 8],
-            ['name' => 'Manajemen Pengguna',  'slug' => 'pengguna',    'url' => 'pengguna',   'icon' => 'bx bx-group',            'group_label' => 'Pengguna',         'urutan' => 9],
-            ['name' => 'Manajemen Roles',     'slug' => 'roles',       'url' => 'roles',      'icon' => 'bx bx-shield-quarter',   'group_label' => 'Pengguna',         'urutan' => 10],
-            ['name' => 'Profil Saya',         'slug' => 'profile',     'url' => 'profile',    'icon' => 'bx bx-user-circle',      'group_label' => 'Akun',             'urutan' => 11],
+            ['name' => 'Ads',                 'slug' => 'ads',         'url' => 'ads',        'icon' => 'bx bx-purchase-tag-alt', 'group_label' => 'Manajemen Konten', 'urutan' => 6],
+            ['name' => 'Notifikasi',          'slug' => 'notifikasi',  'url' => 'notifikasi', 'icon' => 'bx bx-bell',             'group_label' => 'Master Data Mobile',      'urutan' => 7],
+            ['name' => 'Action',              'slug' => 'action',      'url' => 'action',     'icon' => 'bx bx-list-check',       'group_label' => 'Master Data Mobile',      'urutan' => 8],
+            ['name' => 'Versi Aplikasi',      'slug' => 'versi',       'url' => 'versi',      'icon' => 'bx bx-code-block',       'group_label' => 'Master Data Mobile',      'urutan' => 9],
+            ['name' => 'Manajemen Pengguna',  'slug' => 'pengguna',    'url' => 'pengguna',   'icon' => 'bx bx-group',            'group_label' => 'Pengguna',         'urutan' => 10],
+            ['name' => 'Manajemen Roles',     'slug' => 'roles',       'url' => 'roles',      'icon' => 'bx bx-shield-quarter',   'group_label' => 'Pengguna',         'urutan' => 11],
+            ['name' => 'Profil Saya',         'slug' => 'profile',     'url' => 'profile',    'icon' => 'bx bx-user-circle',      'group_label' => 'Akun',             'urutan' => 12],
         ];
         foreach ($menus as $menu) {
             Menu::updateOrCreate(['slug' => $menu['slug']], $menu);
