@@ -28,13 +28,12 @@ class RewardVideoController extends Controller
 
     public function store(Request $request)
 {
-  dd(1);
-    $request->validate([
-        'title'      => 'required|string|max:255',
-        'video_file' => 'nullable|required_without:video_url|file|mimes:mp4,webm,mov|max:20480',
-        'video_url'  => 'nullable|required_without:video_file|url|max:2048',
-        'status'     => 'required|boolean',
-    ]);
+    // $request->validate([
+    //     'title'      => 'required|string|max:255',
+    //     'video_file' => 'nullable|required_without:video_url|file|mimes:mp4,webm,mov|max:20480',
+    //     'video_url'  => 'nullable|required_without:video_file|url|max:2048',
+    //     'status'     => 'required|boolean',
+    // ]);
 
     $data = $request->except(['video_file']);
     $data['status'] = $request->boolean('status');
