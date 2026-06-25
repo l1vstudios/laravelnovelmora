@@ -27,23 +27,26 @@ class RewardVideoController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $data = $request->validate([
-            'title'      => 'required|string|max:255',
-            'video_file' => 'nullable|required_without:video_url|file|mimes:mp4,webm,mov|max:51200',
-            'video_url'  => 'nullable|required_without:video_file|url|max:2048',
-            'status'     => 'required|boolean',
-        ]);
+{
+    $request->validate([
+        'title'      => 'required|string|max:255',
+        'video_file' => 'nullable|required_without:video_url|file|mimes:mp4,webm,mov|max:20480',
+        'video_url'  => 'nullable|required_without:video_file|url|max:2048',
+        'status'     => 'required|boolean',
+    ]);
 
-        if ($request->hasFile('video_file')) {
-            $data['video_path'] = $request->file('video_file')->store('reward-videos', 'public');
-            $data['video_url'] = Storage::url($data['video_path']);
-        }
+    $data = $request->except(['video_file']);
+    $data['status'] = $request->boolean('status');
 
-        $rewardVideo = RewardVideo::create($data);
-
-        return redirect()->route('reward-videos.index')->with('success', 'Video reward berhasil ditambahkan.');
+    if ($request->hasFile('video_file')) {
+        $data['video_path'] = $request->file('video_file')->store('reward-videos', 'public');
+        $data['video_url'] = Storage::url($data['video_path']);
     }
+
+    RewardVideo::create($data);
+
+    return redirect()->route('reward-videos.index')->with('success', 'Video reward berhasil ditambahkan.');
+}
 
     public function show(RewardVideo $rewardVideo)
     {
