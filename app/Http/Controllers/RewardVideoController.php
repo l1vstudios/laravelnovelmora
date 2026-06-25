@@ -30,7 +30,7 @@ class RewardVideoController extends Controller
     {
         $data = $request->validate([
             'title'      => 'required|string|max:255',
-            'video_file' => 'nullable|required_without:video_url|file|mimes:mp4,webm,mov|max:20480',
+            'video_file' => 'nullable|required_without:video_url|file|mimes:mp4,webm,mov|max:51200',
             'video_url'  => 'nullable|required_without:video_file|url|max:2048',
             'status'     => 'required|boolean',
         ]);
@@ -40,10 +40,7 @@ class RewardVideoController extends Controller
             $data['video_url'] = Storage::url($data['video_path']);
         }
 
-        unset($data['video_file']);
-        $data['status'] = $request->boolean('status');
-
-        RewardVideo::create($data);
+        $rewardVideo = RewardVideo::create($data);
 
         return redirect()->route('reward-videos.index')->with('success', 'Video reward berhasil ditambahkan.');
     }
