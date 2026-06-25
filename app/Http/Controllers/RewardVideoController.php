@@ -34,7 +34,7 @@ class RewardVideoController extends Controller
     //     'video_url'  => 'nullable|required_without:video_file|url|max:2048',
     //     'status'     => 'required|boolean',
     // ]);
-
+    dd($request->all());
     $data = $request->except(['video_file']);
     $data['status'] = $request->boolean('status');
 
