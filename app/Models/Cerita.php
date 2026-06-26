@@ -10,7 +10,7 @@ class Cerita extends Model
 
     protected $fillable = [
         'judul', 'cover', 'parts', 'isi_cerita', 'status',
-        'total_read', 'total_vote', 'total_share',
+        'sinopsis', 'total_read', 'total_vote', 'total_share',
         'recomendation', 'wajib_dibaca', 'id_kategori', 'lock',
     ];
 

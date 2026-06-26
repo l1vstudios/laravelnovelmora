@@ -35,6 +35,7 @@ class CeritaController extends Controller
     {
         $request->validate([
             'judul'                   => 'required|string|max:255',
+            'sinopsis'                => 'nullable|string',
             'id_kategori'             => 'nullable|exists:mst_kategori,id',
             'cover'                   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'ads_after_chapters'      => 'nullable|array',
@@ -62,6 +63,7 @@ class CeritaController extends Controller
         }
         $cerita = Cerita::create([
             'judul'         => $request->judul,
+            'sinopsis'      => $request->sinopsis,
             'cover'         => $coverPath,
             'id_kategori'   => $request->id_kategori,
             'status'        => $request->boolean('status'),
@@ -96,6 +98,7 @@ class CeritaController extends Controller
     {
         $request->validate([
             'judul'                   => 'required|string|max:255',
+            'sinopsis'                => 'nullable|string',
             'id_kategori'             => 'nullable|exists:mst_kategori,id',
             'cover'                   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'ads_after_chapters'      => 'nullable|array',
@@ -119,6 +122,7 @@ class CeritaController extends Controller
         }
         $data = [
             'judul'         => $request->judul,
+            'sinopsis'      => $request->sinopsis,
             'id_kategori'   => $request->id_kategori,
             'status'        => $request->boolean('status'),
             'recomendation' => $request->boolean('recomendation'),

@@ -161,6 +161,15 @@
                 </select>
               </div>
               <div class="col-12">
+                <label for="sinopsis" class="form-label">Sinopsis</label>
+                <textarea name="sinopsis" id="sinopsis" rows="3"
+                  class="form-control @error('sinopsis') is-invalid @enderror"
+                  placeholder="Tulis sinopsis singkat cerita...">{{ old('sinopsis') }}</textarea>
+                @error('sinopsis')
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+              </div>
+              <div class="col-12">
                 <label class="form-label">Cover Cerita</label>
                 <div class="d-flex align-items-start gap-4">
                   <img id="cover-preview" src="" alt="Preview" class="rounded border object-fit-cover"
