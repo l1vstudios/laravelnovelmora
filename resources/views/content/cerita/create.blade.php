@@ -46,7 +46,7 @@
 
     let chapterCount = 0;
 
-    function addChapter(content = '', locked = false, selectedAds = []) {
+    function addChapter(title = '', content = '', locked = false, selectedAds = []) {
       chapterCount++;
       const container = document.getElementById('chapters-container');
       const div = document.createElement('div');
@@ -68,7 +68,12 @@
             </div>
         </div>
         <div class="card-body">
-            <textarea name="chapters[]" rows="5" class="form-control"
+            <div class="mb-3">
+                <label for="title_${chapterCount}" class="form-label">Judul Chapter</label>
+                <input type="text" name="chapter_titles[]" id="title_${chapterCount}" class="form-control chapter-title"
+                    placeholder="Tulis judul chapter ${chapterCount}..." value="${escapeHtml(title)}">
+            </div>
+            <textarea name="chapters[]" rows="5" class="form-control chapter-content"
                 placeholder="Tulis isi chapter ${chapterCount}...">${content}</textarea>
             <div class="mt-4 pt-4 border-top">
                 <label class="form-label mb-2">Sisipkan Ads setelah chapter ini</label>
@@ -91,8 +96,15 @@
         const lock = row.querySelector('.chapter-lock');
         lock.value = num;
         lock.id = `lock_${num}`;
-        row.querySelector('label').setAttribute('for', `lock_${num}`);
-        row.querySelector('textarea').placeholder = `Tulis isi chapter ${num}...`;
+        row.querySelector('label[for^="lock_"]').setAttribute('for', `lock_${num}`);
+
+        const titleInput = row.querySelector('.chapter-title');
+        titleInput.placeholder = `Tulis judul chapter ${num}...`;
+        titleInput.id = `title_${num}`;
+        row.querySelector('label[for^="title_"]').setAttribute('for', `title_${num}`);
+
+        row.querySelector('.chapter-content').placeholder = `Tulis isi chapter ${num}...`;
+
         row.querySelectorAll('.chapter-ad').forEach((adInput) => {
           adInput.name = `ads_after_chapters[${num}][]`;
           adInput.id = `ad_${num}_${adInput.value}`;
@@ -223,6 +235,23 @@
         const msg = document.getElementById('no-chapter-msg');
         if (msg) msg.style.display = document.querySelectorAll('.chapter-row').length ? 'none' : 'block';
       }, 10);
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const oldChapters = @json(old('chapters', []));
+      if (oldChapters.length) {
+        const oldTitles = @json(old('chapter_titles', []));
+        const oldLocks = @json(old('locked_chapters', []));
+        const oldAds = @json(old('ads_after_chapters', []));
+
+        oldChapters.forEach((content, i) => {
+          const title = oldTitles[i] || '';
+          const chapterNum = i + 1;
+          const locked = oldLocks.includes(String(chapterNum));
+          const ads = oldAds[chapterNum] || [];
+          addChapter(title, content, locked, ads);
+        });
+      }
     });
   </script>
 @endsection

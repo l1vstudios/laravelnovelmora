@@ -40,12 +40,20 @@ class CeritaController extends Controller
             'ads_after_chapters'      => 'nullable|array',
             'ads_after_chapters.*'    => 'nullable|array',
             'ads_after_chapters.*.*'  => 'integer|exists:mst_ads,id',
+            'chapter_titles'          => 'nullable|array',
+            'chapter_titles.*'        => 'nullable|string|max:255',
+            'chapters'                => 'nullable|array',
+            'chapters.*'              => 'nullable|string',
         ]);
         $isiCerita = [];
         $lock = [];
+        $chapterTitles = $request->input('chapter_titles', []);
         foreach ($request->input('chapters', []) as $i => $content) {
             $key = 'chapter ' . ($i + 1);
-            $isiCerita[$key] = $content;
+            $isiCerita[$key] = [
+                'title' => $chapterTitles[$i] ?? 'Chapter ' . ($i + 1),
+                'content' => $content ?? '',
+            ];
             $lock[$key]      = in_array((string)($i + 1), $request->input('locked_chapters', []));
         }
         $coverPath = null;
@@ -93,12 +101,20 @@ class CeritaController extends Controller
             'ads_after_chapters'      => 'nullable|array',
             'ads_after_chapters.*'    => 'nullable|array',
             'ads_after_chapters.*.*'  => 'integer|exists:mst_ads,id',
+            'chapter_titles'          => 'nullable|array',
+            'chapter_titles.*'        => 'nullable|string|max:255',
+            'chapters'                => 'nullable|array',
+            'chapters.*'              => 'nullable|string',
         ]);
         $isiCerita = [];
         $lock = [];
+        $chapterTitles = $request->input('chapter_titles', []);
         foreach ($request->input('chapters', []) as $i => $content) {
             $key = 'chapter ' . ($i + 1);
-            $isiCerita[$key] = $content;
+            $isiCerita[$key] = [
+                'title' => $chapterTitles[$i] ?? 'Chapter ' . ($i + 1),
+                'content' => $content ?? '',
+            ];
             $lock[$key]      = in_array((string)($i + 1), $request->input('locked_chapters', []));
         }
         $data = [
