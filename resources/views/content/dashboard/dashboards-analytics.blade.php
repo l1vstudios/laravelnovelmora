@@ -4,7 +4,7 @@
   <div class="d-flex align-items-center justify-content-between mb-6">
     <div>
       <h4 class="mb-1">Dashboard</h4>
-      <small class="text-muted">Ringkasan data NovelMora</small>
+      <small class="text-muted">Ringkasan data BACAAN</small>
     </div>
     <small class="text-muted">{{ now()->translatedFormat('d F Y') }}</small>
   </div>
@@ -89,7 +89,7 @@
             </span>
           </div>
           <h5 class="mb-1">{{ number_format($stats['total_vote']) }}</h5>
-          <small class="text-muted">Total Vote</small>
+          <small class="text-muted">Total Penilaian</small>
         </div>
       </div>
     </div>
@@ -116,7 +116,7 @@
             </span>
             <a href="{{ route('versi.index') }}" class="text-muted" style="font-size:.75rem;">Lihat semua →</a>
           </div>
-          <h5 class="mb-1">{{ number_format($stats['versi']) }}</h5>
+          <h5 class="mb-1">{{ $stats['versi'] }}</h5>
           <small class="text-muted">Versi Aplikasi</small>
         </div>
       </div>

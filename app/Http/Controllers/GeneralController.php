@@ -6,13 +6,15 @@ class GeneralController extends Controller
 {
     public function analytics()
     {
+        $latestVersion = \App\Models\Versi::orderByDesc('id')->first(['version_name', 'version_code']);
+
         $stats = [
             'cerita'     => \App\Models\Cerita::count(),
             'kategori'   => \App\Models\Kategori::count(),
             'slider'     => \App\Models\Slider::count(),
             'notifikasi' => \App\Models\Notifikasi::count(),
             'action'     => \App\Models\MstAction::count(),
-            'versi'      => \App\Models\Versi::count(),
+            'versi'      => $latestVersion?->version_name ?? '-',
             'pengguna'   => \App\Models\MstUser::count(),
             'total_read' => \App\Models\Cerita::sum('total_read'),
             'total_vote' => \App\Models\Cerita::sum('total_vote'),

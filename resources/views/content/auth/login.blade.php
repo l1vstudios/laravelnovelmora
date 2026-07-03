@@ -16,7 +16,7 @@
           <!-- Logo -->
           <div class="app-brand justify-content-center mb-6">
             <a href="{{ url('/') }}" class="app-brand-link gap-2">
-              <span class="app-brand-text demo fw-bold fs-4">NOVEL APPS</span>
+              <span class="app-brand-text demo fw-bold fs-4">BACAAN</span>
             </a>
           </div>
           <!-- /Logo -->
