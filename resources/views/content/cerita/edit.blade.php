@@ -48,11 +48,26 @@ function renderAdsOptions(chapterNumber, selectedAds = []) {
 
 let chapterCount = 0;
 
-function addChapter(content = '', locked = false, selectedAds = []) {
+function normalizeChapter(chapter, index) {
+    if (chapter && typeof chapter === 'object') {
+        return {
+            title: chapter.title || `Chapter ${index + 1}`,
+            content: chapter.content || '',
+        };
+    }
+
+    return {
+        title: `Chapter ${index + 1}`,
+        content: chapter || '',
+    };
+}
+
+function addChapter(title = '', content = '', locked = false, selectedAds = []) {
     chapterCount++;
     const container = document.getElementById('chapters-container');
     const div = document.createElement('div');
     div.className = 'card mb-4 chapter-row border';
+    div.dataset.index = chapterCount;
     const adsMarkup = renderAdsOptions(chapterCount, selectedAds);
     div.innerHTML = `
         <div class="card-header d-flex align-items-center justify-content-between py-3">
@@ -69,8 +84,13 @@ function addChapter(content = '', locked = false, selectedAds = []) {
             </div>
         </div>
         <div class="card-body">
-            <textarea name="chapters[]" rows="5" class="form-control"
-                placeholder="Tulis isi chapter ${chapterCount}...">${content}</textarea>
+            <div class="mb-3">
+                <label for="title_${chapterCount}" class="form-label">Judul Chapter</label>
+                <input type="text" name="chapter_titles[]" id="title_${chapterCount}" class="form-control chapter-title"
+                    placeholder="Tulis judul chapter ${chapterCount}..." value="${escapeHtml(title)}">
+            </div>
+            <textarea name="chapters[]" rows="5" class="form-control chapter-content"
+                placeholder="Tulis isi chapter ${chapterCount}...">${escapeHtml(content)}</textarea>
             <div class="mt-4 pt-4 border-top">
                 <label class="form-label mb-2">Sisipkan Ads setelah chapter ini</label>
                 <div class="d-flex flex-wrap gap-3">${adsMarkup}</div>
@@ -92,8 +112,15 @@ function renumberChapters() {
         const lock = row.querySelector('.chapter-lock');
         lock.value = num;
         lock.id = `lock_${num}`;
-        row.querySelector('label').setAttribute('for', `lock_${num}`);
-        row.querySelector('textarea').placeholder = `Tulis isi chapter ${num}...`;
+        row.querySelector('label[for^="lock_"]').setAttribute('for', `lock_${num}`);
+
+        const titleInput = row.querySelector('.chapter-title');
+        titleInput.placeholder = `Tulis judul chapter ${num}...`;
+        titleInput.id = `title_${num}`;
+        row.querySelector('label[for^="title_"]').setAttribute('for', `title_${num}`);
+
+        row.querySelector('.chapter-content').placeholder = `Tulis isi chapter ${num}...`;
+
         row.querySelectorAll('.chapter-ad').forEach((adInput) => {
             adInput.name = `ads_after_chapters[${num}][]`;
             adInput.id = `ad_${num}_${adInput.value}`;
@@ -105,12 +132,30 @@ function renumberChapters() {
 }
 
 window.addEventListener('DOMContentLoaded', function () {
+    const oldChapters = @json(old('chapters', null));
+
+    if (Array.isArray(oldChapters)) {
+        const oldTitles = @json(old('chapter_titles', []));
+        const oldLocks = @json(old('locked_chapters', []));
+        const oldAds = @json(old('ads_after_chapters', []));
+
+        oldChapters.forEach((content, i) => {
+            const chapterNumber = i + 1;
+            const locked = oldLocks.map(String).includes(String(chapterNumber));
+            addChapter(oldTitles[i] || `Chapter ${chapterNumber}`, content || '', locked, oldAds[chapterNumber] || []);
+        });
+
+        return;
+    }
+
     const isiCerita = @json($cerita->isi_cerita ?? []);
-    const lockData  = @json($cerita->lock ?? []);
+    const lockData = @json($cerita->lock ?? []);
+
     Object.keys(isiCerita).forEach(function (key, i) {
-        const isLocked = lockData[key] === true;
         const chapterNumber = i + 1;
-        addChapter(isiCerita[key], isLocked, adPlacements[chapterNumber] || []);
+        const chapter = normalizeChapter(isiCerita[key], i);
+        const isLocked = lockData[key] === true;
+        addChapter(chapter.title, chapter.content, isLocked, adPlacements[chapterNumber] || []);
     });
 });
 </script>
@@ -157,6 +202,14 @@ window.addEventListener('DOMContentLoaded', function () {
                                     </option>
                                 @endforeach
                             </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="sinopsis" class="form-label">Sinopsis</label>
+                            <textarea name="sinopsis" id="sinopsis" rows="3"
+                                class="form-control @error('sinopsis') is-invalid @enderror"
+                                placeholder="Tulis sinopsis singkat cerita...">{{ old('sinopsis', $cerita->sinopsis) }}</textarea>
+                            @error('sinopsis')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
                         <div class="col-12">
