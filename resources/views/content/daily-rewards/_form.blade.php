@@ -10,7 +10,7 @@
     </div>
     <div class="col-md-4">
         <label class="form-label">Koin <span class="text-danger">*</span></label>
-        <input type="number" name="coin_reward" min="0" class="form-control @error('coin_reward') is-invalid @enderror" value="{{ old('coin_reward', $dailyReward->coin_reward ?? 0) }}">
+        <input type="number" name="coin_reward" min="0" max="4294967295" class="form-control @error('coin_reward') is-invalid @enderror" value="{{ old('coin_reward', $dailyReward->coin_reward ?? 0) }}">
         @error('coin_reward')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-6">

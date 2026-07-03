@@ -23,7 +23,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Kode Versi <span class="text-danger">*</span></label>
-                            <input type="number" name="version_code" class="form-control @error('version_code') is-invalid @enderror" value="{{ old('version_code', $versi->version_code) }}" placeholder="contoh: 1" min="1">
+                            <input type="number" name="version_code" class="form-control @error('version_code') is-invalid @enderror" value="{{ old('version_code', $versi->version_code) }}" placeholder="contoh: 1" min="1" max="2147483647">
                             @error('version_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>

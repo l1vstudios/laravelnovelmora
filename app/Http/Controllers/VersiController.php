@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 
 class VersiController extends Controller
 {
+    private const MAX_VERSION_CODE = 2147483647;
+
     public function index()
     {
         $versis = Versi::latest()->paginate(10);
@@ -22,7 +24,9 @@ class VersiController extends Controller
     {
         $request->validate([
             'version_name' => 'required|string|max:50',
-            'version_code' => 'required|integer|min:1',
+            'version_code' => 'required|integer|min:1|max:' . self::MAX_VERSION_CODE,
+        ], [
+            'version_code.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
         ]);
 
         Versi::create($request->only('version_name', 'version_code'));
@@ -44,7 +48,9 @@ class VersiController extends Controller
     {
         $request->validate([
             'version_name' => 'required|string|max:50',
-            'version_code' => 'required|integer|min:1',
+            'version_code' => 'required|integer|min:1|max:' . self::MAX_VERSION_CODE,
+        ], [
+            'version_code.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
         ]);
 
         $versi->update($request->only('version_name', 'version_code'));

@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Storage;
 
 class AdsController extends Controller
 {
+    private const MAX_UNSIGNED_INTEGER = 4294967295;
+
     public function index(Request $request)
     {
         $query = Ad::withCount('placements')->latest();
@@ -49,7 +51,9 @@ class AdsController extends Controller
             'status'            => 'required|boolean',
             'placements'        => 'nullable|array',
             'placements.*'      => 'nullable|array',
-            'placements.*.*'    => 'integer|min:1',
+            'placements.*.*'    => 'integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
+        ], [
+            'placements.*.*.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
         ]);
 
         if ($request->hasFile('media_file')) {
@@ -99,7 +103,9 @@ class AdsController extends Controller
             'status'            => 'required|boolean',
             'placements'        => 'nullable|array',
             'placements.*'      => 'nullable|array',
-            'placements.*.*'    => 'integer|min:1',
+            'placements.*.*'    => 'integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
+        ], [
+            'placements.*.*.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
         ]);
 
         if ($request->hasFile('media_file')) {

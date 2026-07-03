@@ -28,12 +28,24 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Password <span class="text-danger">*</span></label>
-                            <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Min. 6 karakter">
-                            @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="input-group input-group-merge">
+                                <input type="password" name="password" id="password"
+                                    class="form-control @error('password') is-invalid @enderror" placeholder="Min. 6 karakter">
+                                <span class="input-group-text cursor-pointer" onclick="togglePenggunaPassword('password', this)">
+                                    <i class="icon-base bx bx-hide"></i>
+                                </span>
+                            </div>
+                            @error('password')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Konfirmasi Password <span class="text-danger">*</span></label>
-                            <input type="password" name="password_confirmation" class="form-control" placeholder="Ulangi password">
+                            <div class="input-group input-group-merge">
+                                <input type="password" name="password_confirmation" id="password_confirmation"
+                                    class="form-control" placeholder="Ulangi password">
+                                <span class="input-group-text cursor-pointer" onclick="togglePenggunaPassword('password_confirmation', this)">
+                                    <i class="icon-base bx bx-hide"></i>
+                                </span>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Role</label>
@@ -55,4 +67,18 @@
         </div>
     </div>
 </div>
+<script>
+function togglePenggunaPassword(id, el) {
+    const input = document.getElementById(id);
+    const icon = el.querySelector('i');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('bx-hide', 'bx-show');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('bx-show', 'bx-hide');
+    }
+}
+</script>
 @endsection

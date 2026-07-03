@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class DailyRewardController extends Controller
 {
+    private const MAX_UNSIGNED_INTEGER = 4294967295;
+
     private const DAYS = [
         1 => 'Senin',
         2 => 'Selasa',
@@ -134,11 +136,13 @@ class DailyRewardController extends Controller
         return $request->validate([
             'reward_type_id'       => 'required|exists:mst_reward_types,id',
             'title'                => 'required|string|max:255',
-            'coin_reward'          => 'required|integer|min:0',
+            'coin_reward'          => 'required|integer|min:0|max:' . self::MAX_UNSIGNED_INTEGER,
             'target_url'           => 'nullable|url|max:2048',
             'status'               => 'required|boolean',
             'video_schedules'      => 'nullable|array',
             'video_schedules.*'    => 'nullable|integer|exists:mst_reward_videos,id',
+        ], [
+            'coin_reward.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
         ]);
     }
 
