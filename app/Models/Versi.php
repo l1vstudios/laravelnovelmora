@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Versi extends Model
 {
-    protected $table = 'mst_version';
+    protected $table = 'mst_versions';
 
     protected $fillable = ['version_name', 'version_code'];
 }
