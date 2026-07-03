@@ -1,5 +1,5 @@
 @extends('layouts/contentNavbarLayout')
-@section('title', 'Master Type')
+@section('title', 'Type BONUS HARIAN')
 
 @section('content')
 <div class="row">
