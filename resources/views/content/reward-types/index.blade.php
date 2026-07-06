@@ -25,6 +25,7 @@
                         @if(request()->filled('status'))<a href="{{ route('reward-types.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>@endif
                     </div>
                 </form>
+                {{-- baba --}}
             </div>
             <div class="table-responsive text-nowrap">
                 <table class="table table-hover">
