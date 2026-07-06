@@ -53,6 +53,7 @@ class DailyRewardController extends Controller
         $videoSchedules = $data['video_schedules'] ?? [];
         unset($data['video_schedules']);
 
+        $data['target_url'] = $this->targetUrlFromVideoSchedules($videoSchedules) ?? ($data['target_url'] ?? null);
         $data['status'] = $request->boolean('status');
 
         $dailyReward = DailyReward::create($data);
@@ -82,6 +83,7 @@ class DailyRewardController extends Controller
         $videoSchedules = $data['video_schedules'] ?? [];
         unset($data['video_schedules']);
 
+        $data['target_url'] = $this->targetUrlFromVideoSchedules($videoSchedules) ?? ($data['target_url'] ?? null);
         $data['status'] = $request->boolean('status');
 
         $dailyReward->update($data);
@@ -154,6 +156,27 @@ class DailyRewardController extends Controller
             'rewardVideos' => RewardVideo::active()->orderBy('title')->get(),
             'days' => self::DAYS,
         ];
+    }
+
+    private function targetUrlFromVideoSchedules(array $videoSchedules): ?string
+    {
+        ksort($videoSchedules);
+
+        foreach ($videoSchedules as $day => $videoId) {
+            if (!$videoId) {
+                continue;
+            }
+
+            $dayNumber = (int) $day;
+
+            if ($dayNumber < 1 || $dayNumber > 7) {
+                continue;
+            }
+
+            return RewardVideo::find((int) $videoId)?->video_target_url;
+        }
+
+        return null;
     }
 
     private function syncVideoSchedules(DailyReward $dailyReward, array $videoSchedules): void

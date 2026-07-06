@@ -39,4 +39,13 @@ class RewardVideo extends Model
 
         return $this->video_url;
     }
+
+    public function getVideoTargetUrlAttribute(): string
+    {
+        if ($this->video_path) {
+            return asset('storage/' . ltrim($this->video_path, '/'));
+        }
+
+        return $this->video_url;
+    }
 }

@@ -27,7 +27,7 @@
     </div>
     <div class="col-md-6">
         <label class="form-label">URL Target</label>
-        <input type="url" name="target_url" class="form-control @error('target_url') is-invalid @enderror" value="{{ old('target_url', $dailyReward->target_url ?? '') }}" placeholder="https://instagram.com/...">
+        <input type="url" name="target_url" id="target_url" class="form-control @error('target_url') is-invalid @enderror" value="{{ old('target_url', $dailyReward->target_url ?? '') }}" placeholder="https://...">
         @error('target_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-12">
@@ -36,10 +36,10 @@
             @foreach($days as $dayNumber => $dayLabel)
             <div class="col-md-6">
                 <label class="form-label">{{ $dayLabel }}</label>
-                <select name="video_schedules[{{ $dayNumber }}]" class="form-select">
+                <select name="video_schedules[{{ $dayNumber }}]" class="form-select js-video-schedule">
                     <option value="">-- Tidak ada video --</option>
                     @foreach($rewardVideos as $video)
-                        <option value="{{ $video->id }}" {{ old('video_schedules.' . $dayNumber, $selectedSchedules[$dayNumber] ?? '') == $video->id ? 'selected' : '' }}>
+                        <option value="{{ $video->id }}" data-video-url="{{ $video->video_target_url }}" {{ old('video_schedules.' . $dayNumber, $selectedSchedules[$dayNumber] ?? '') == $video->id ? 'selected' : '' }}>
                             {{ $video->title }}
                         </option>
                     @endforeach
@@ -56,3 +56,32 @@
         </div>
     </div>
 </div>
+
+@section('page-script')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const targetInput = document.getElementById('target_url');
+    const videoSelects = document.querySelectorAll('.js-video-schedule');
+
+    const firstSelectedVideoUrl = () => {
+        for (const select of videoSelects) {
+            const url = select.selectedOptions[0]?.dataset.videoUrl;
+            if (url) return url;
+        }
+
+        return '';
+    };
+
+    videoSelects.forEach((select) => {
+        select.addEventListener('change', function () {
+            const selectedUrl = this.selectedOptions[0]?.dataset.videoUrl;
+            targetInput.value = selectedUrl || firstSelectedVideoUrl() || targetInput.value;
+        });
+    });
+
+    if (!targetInput.value) {
+        targetInput.value = firstSelectedVideoUrl();
+    }
+});
+</script>
+@endsection
