@@ -24,10 +24,21 @@
     }
 
     function normalizeChapterContentText(value) {
-      return String(value || '')
+      const paragraphs = String(value || '')
         .replace(/\r\n?/g, '\n')
         .replace(/\u00a0/g, ' ')
-        .replace(/[ \t]*[-‐‑‒–—―]+[ \t]*/gu, ' ');
+        .replace(/[ \t]*[-‐‑‒–—―]+[ \t]*/gu, ' ')
+        .split(/\n[ \t]*\n+/)
+        .map((paragraph) => paragraph
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .join(' ')
+          .replace(/[ \t]+/g, ' ')
+          .trim())
+        .filter(Boolean);
+
+      return paragraphs.join('\n\n');
     }
 
     function normalizeChapterTitleText(value) {
