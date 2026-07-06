@@ -53,7 +53,7 @@ class CeritaController extends Controller
             $key = 'chapter ' . ($i + 1);
             $isiCerita[$key] = [
                 'title' => $chapterTitles[$i] ?? 'Chapter ' . ($i + 1),
-                'content' => $content ?? '',
+                'content' => $this->normalizeChapterContent($content),
             ];
             $lock[$key]      = in_array((string)($i + 1), $request->input('locked_chapters', []));
         }
@@ -116,7 +116,7 @@ class CeritaController extends Controller
             $key = 'chapter ' . ($i + 1);
             $isiCerita[$key] = [
                 'title' => $chapterTitles[$i] ?? 'Chapter ' . ($i + 1),
-                'content' => $content ?? '',
+                'content' => $this->normalizeChapterContent($content),
             ];
             $lock[$key]      = in_array((string)($i + 1), $request->input('locked_chapters', []));
         }
@@ -178,5 +178,18 @@ class CeritaController extends Controller
         if ($placements) {
             CeritaAd::insert($placements);
         }
+    }
+
+    private function normalizeChapterContent(?string $content): string
+    {
+        $content = str_replace(["\r\n", "\r"], "\n", $content ?? '');
+        $content = str_replace("\xc2\xa0", ' ', $content);
+        $content = preg_replace('/[ \t]+/u', ' ', $content) ?? $content;
+
+        $lines = array_map(static fn ($line) => trim($line), explode("\n", $content));
+        $content = implode("\n", $lines);
+        $content = preg_replace("/\n{3,}/", "\n\n", $content) ?? $content;
+
+        return trim($content);
     }
 }

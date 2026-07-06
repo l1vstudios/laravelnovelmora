@@ -25,6 +25,32 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
+function normalizeChapterText(value) {
+    return String(value || '')
+        .replace(/\r\n?/g, '\n')
+        .replace(/\u00a0/g, ' ')
+        .replace(/[ \t]+/g, ' ')
+        .split('\n')
+        .map((line) => line.trim())
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
+function normalizeTextarea(textarea) {
+    textarea.value = normalizeChapterText(textarea.value);
+}
+
+function pasteNormalizedText(textarea, text) {
+    const normalized = normalizeChapterText(text);
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    textarea.value = `${textarea.value.slice(0, start)}${normalized}${textarea.value.slice(end)}`;
+    textarea.selectionStart = textarea.selectionEnd = start + normalized.length;
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 function renderAdsOptions(chapterNumber, selectedAds = []) {
     if (!availableAds.length) {
         return '<small class="text-muted">Belum ada ads aktif.</small>';
@@ -130,6 +156,26 @@ function renumberChapters() {
     });
     chapterCount = document.querySelectorAll('.chapter-row').length;
 }
+
+document.addEventListener('paste', function (event) {
+    const textarea = event.target.closest('.chapter-content');
+    if (!textarea) return;
+
+    event.preventDefault();
+    pasteNormalizedText(textarea, event.clipboardData.getData('text'));
+});
+
+document.addEventListener('blur', function (event) {
+    if (event.target.matches('.chapter-content')) {
+        normalizeTextarea(event.target);
+    }
+}, true);
+
+document.addEventListener('submit', function (event) {
+    if (!event.target.querySelector('.chapter-content')) return;
+
+    event.target.querySelectorAll('.chapter-content').forEach(normalizeTextarea);
+});
 
 window.addEventListener('DOMContentLoaded', function () {
     const oldChapters = @json(old('chapters', null));

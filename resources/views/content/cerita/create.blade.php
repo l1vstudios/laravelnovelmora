@@ -23,6 +23,32 @@
         .replace(/'/g, '&#039;');
     }
 
+    function normalizeChapterText(value) {
+      return String(value || '')
+        .replace(/\r\n?/g, '\n')
+        .replace(/\u00a0/g, ' ')
+        .replace(/[ \t]+/g, ' ')
+        .split('\n')
+        .map((line) => line.trim())
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    function normalizeTextarea(textarea) {
+      textarea.value = normalizeChapterText(textarea.value);
+    }
+
+    function pasteNormalizedText(textarea, text) {
+      const normalized = normalizeChapterText(text);
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+
+      textarea.value = `${textarea.value.slice(0, start)}${normalized}${textarea.value.slice(end)}`;
+      textarea.selectionStart = textarea.selectionEnd = start + normalized.length;
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
     function renderAdsOptions(chapterNumber, selectedAds = []) {
       if (!availableAds.length) {
         return '<small class="text-muted">Belum ada ads aktif.</small>';
@@ -74,7 +100,7 @@
                     placeholder="Tulis judul chapter ${chapterCount}..." value="${escapeHtml(title)}">
             </div>
             <textarea name="chapters[]" rows="5" class="form-control chapter-content"
-                placeholder="Tulis isi chapter ${chapterCount}...">${content}</textarea>
+                placeholder="Tulis isi chapter ${chapterCount}...">${escapeHtml(content)}</textarea>
             <div class="mt-4 pt-4 border-top">
                 <label class="form-label mb-2">Sisipkan Ads setelah chapter ini</label>
                 <div class="d-flex flex-wrap gap-3">${adsMarkup}</div>
@@ -114,6 +140,26 @@
       });
       chapterCount = document.querySelectorAll('.chapter-row').length;
     }
+
+    document.addEventListener('paste', function(event) {
+      const textarea = event.target.closest('.chapter-content');
+      if (!textarea) return;
+
+      event.preventDefault();
+      pasteNormalizedText(textarea, event.clipboardData.getData('text'));
+    });
+
+    document.addEventListener('blur', function(event) {
+      if (event.target.matches('.chapter-content')) {
+        normalizeTextarea(event.target);
+      }
+    }, true);
+
+    document.addEventListener('submit', function(event) {
+      if (!event.target.querySelector('.chapter-content')) return;
+
+      event.target.querySelectorAll('.chapter-content').forEach(normalizeTextarea);
+    });
   </script>
 @endsection
 @section('content')
