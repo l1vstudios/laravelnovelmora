@@ -52,7 +52,7 @@ class CeritaController extends Controller
         foreach ($request->input('chapters', []) as $i => $content) {
             $key = 'chapter ' . ($i + 1);
             $isiCerita[$key] = [
-                'title' => $chapterTitles[$i] ?? 'Chapter ' . ($i + 1),
+                'title' => $this->normalizeChapterTitle($chapterTitles[$i] ?? 'Chapter ' . ($i + 1)),
                 'content' => $this->normalizeChapterContent($content),
             ];
             $lock[$key]      = in_array((string)($i + 1), $request->input('locked_chapters', []));
@@ -115,7 +115,7 @@ class CeritaController extends Controller
         foreach ($request->input('chapters', []) as $i => $content) {
             $key = 'chapter ' . ($i + 1);
             $isiCerita[$key] = [
-                'title' => $chapterTitles[$i] ?? 'Chapter ' . ($i + 1),
+                'title' => $this->normalizeChapterTitle($chapterTitles[$i] ?? 'Chapter ' . ($i + 1)),
                 'content' => $this->normalizeChapterContent($content),
             ];
             $lock[$key]      = in_array((string)($i + 1), $request->input('locked_chapters', []));
@@ -184,6 +184,7 @@ class CeritaController extends Controller
     {
         $content = str_replace(["\r\n", "\r"], "\n", $content ?? '');
         $content = str_replace("\xc2\xa0", ' ', $content);
+        $content = str_replace('--', '', $content);
         $content = preg_replace('/[ \t]+/u', ' ', $content) ?? $content;
 
         $lines = array_map(static fn ($line) => trim($line), explode("\n", $content));
@@ -191,5 +192,14 @@ class CeritaController extends Controller
         $content = preg_replace("/\n{3,}/", "\n\n", $content) ?? $content;
 
         return trim($content);
+    }
+
+    private function normalizeChapterTitle(?string $title): string
+    {
+        $title = str_replace("\xc2\xa0", ' ', $title ?? '');
+        $title = str_replace('--', '', $title);
+        $title = preg_replace('/\s+/u', ' ', $title) ?? $title;
+
+        return trim($title);
     }
 }

@@ -27,6 +27,7 @@
       return String(value || '')
         .replace(/\r\n?/g, '\n')
         .replace(/\u00a0/g, ' ')
+        .replace(/--/g, '')
         .replace(/[ \t]+/g, ' ')
         .split('\n')
         .map((line) => line.trim())
@@ -35,18 +36,22 @@
         .trim();
     }
 
-    function normalizeTextarea(textarea) {
-      textarea.value = normalizeChapterText(textarea.value);
+    function normalizeChapterField(field) {
+      field.value = normalizeChapterText(field.value);
+
+      if (field.matches('.chapter-title')) {
+        field.value = field.value.replace(/\s+/g, ' ').trim();
+      }
     }
 
-    function pasteNormalizedText(textarea, text) {
+    function pasteNormalizedText(field, text) {
       const normalized = normalizeChapterText(text);
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
+      const start = field.selectionStart;
+      const end = field.selectionEnd;
 
-      textarea.value = `${textarea.value.slice(0, start)}${normalized}${textarea.value.slice(end)}`;
-      textarea.selectionStart = textarea.selectionEnd = start + normalized.length;
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      field.value = `${field.value.slice(0, start)}${normalized}${field.value.slice(end)}`;
+      field.selectionStart = field.selectionEnd = start + normalized.length;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     function renderAdsOptions(chapterNumber, selectedAds = []) {
@@ -142,23 +147,23 @@
     }
 
     document.addEventListener('paste', function(event) {
-      const textarea = event.target.closest('.chapter-content');
-      if (!textarea) return;
+      const field = event.target.closest('.chapter-title, .chapter-content');
+      if (!field) return;
 
       event.preventDefault();
-      pasteNormalizedText(textarea, event.clipboardData.getData('text'));
+      pasteNormalizedText(field, event.clipboardData.getData('text'));
     });
 
     document.addEventListener('blur', function(event) {
-      if (event.target.matches('.chapter-content')) {
-        normalizeTextarea(event.target);
+      if (event.target.matches('.chapter-title, .chapter-content')) {
+        normalizeChapterField(event.target);
       }
     }, true);
 
     document.addEventListener('submit', function(event) {
-      if (!event.target.querySelector('.chapter-content')) return;
+      if (!event.target.querySelector('.chapter-title, .chapter-content')) return;
 
-      event.target.querySelectorAll('.chapter-content').forEach(normalizeTextarea);
+      event.target.querySelectorAll('.chapter-title, .chapter-content').forEach(normalizeChapterField);
     });
   </script>
 @endsection
