@@ -1,7 +1,6 @@
 @extends('layouts/contentNavbarLayout')
 @section('title', 'Tambah Cerita')
 @section('page-script')
-  @vite(['resources/assets/js/cerita-editor.js'])
   <script>
     function previewCover(input) {
       const preview = document.getElementById('cover-preview');
@@ -42,7 +41,9 @@
     }
 
     function pasteNormalizedText(field, text) {
-      const normalized = normalizeChapterTitleText(text);
+      const normalized = field.matches('.chapter-title')
+        ? normalizeChapterTitleText(text)
+        : normalizeChapterContentText(text);
       const start = field.selectionStart;
       const end = field.selectionEnd;
 
@@ -51,13 +52,16 @@
       field.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
-    function initializeChapterEditor(textarea) {
-      if (window.ChapterEditor) {
-        window.ChapterEditor.init(textarea);
-        return;
-      }
+    function htmlToTextareaText(value) {
+      const html = String(value || '');
+      if (!/<[a-z][\s\S]*>/i.test(html)) return html;
 
-      window.addEventListener('chapter-editor-ready', () => window.ChapterEditor.init(textarea), { once: true });
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = html
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/(p|div|h[1-6]|blockquote|li)>/gi, '\n\n');
+
+      return wrapper.textContent.replace(/\n{3,}/g, '\n\n').trim();
     }
 
     function renderAdsOptions(chapterNumber, selectedAds = []) {
@@ -90,6 +94,7 @@
       div.className = 'card mb-4 chapter-row border';
       div.dataset.index = chapterCount;
       const adsMarkup = renderAdsOptions(chapterCount, selectedAds);
+      const chapterContent = htmlToTextareaText(content);
       div.innerHTML = `
         <div class="card-header d-flex align-items-center justify-content-between py-3">
             <span class="fw-medium">Chapter ${chapterCount}</span>
@@ -111,21 +116,18 @@
                     placeholder="Tulis judul chapter ${chapterCount}..." value="${escapeHtml(title)}">
             </div>
             <textarea name="chapters[]" id="content_${chapterCount}" rows="5" class="form-control chapter-content"
-                placeholder="Tulis isi chapter ${chapterCount}...">${escapeHtml(content)}</textarea>
+                placeholder="Tulis isi chapter ${chapterCount}...">${escapeHtml(chapterContent)}</textarea>
             <div class="mt-4 pt-4 border-top">
                 <label class="form-label mb-2">Sisipkan Ads setelah chapter ini</label>
                 <div class="d-flex flex-wrap gap-3">${adsMarkup}</div>
             </div>
         </div>`;
       container.appendChild(div);
-      initializeChapterEditor(div.querySelector('.chapter-content'));
       renumberChapters();
     }
 
     function removeChapter(btn) {
-      const row = btn.closest('.chapter-row');
-      window.ChapterEditor?.remove(row.querySelector('.chapter-content'));
-      row.remove();
+      btn.closest('.chapter-row').remove();
       renumberChapters();
     }
 
@@ -156,7 +158,7 @@
     }
 
     document.addEventListener('paste', function(event) {
-      const field = event.target.closest('.chapter-title');
+      const field = event.target.closest('.chapter-title, .chapter-content');
       if (!field) return;
 
       event.preventDefault();
@@ -164,17 +166,15 @@
     });
 
     document.addEventListener('blur', function(event) {
-      if (event.target.matches('.chapter-title')) {
+      if (event.target.matches('.chapter-title, .chapter-content')) {
         normalizeChapterField(event.target);
       }
     }, true);
 
     document.addEventListener('submit', function(event) {
-      window.ChapterEditor?.syncAll();
+      if (!event.target.querySelector('.chapter-title, .chapter-content')) return;
 
-      if (!event.target.querySelector('.chapter-title')) return;
-
-      event.target.querySelectorAll('.chapter-title').forEach(normalizeChapterField);
+      event.target.querySelectorAll('.chapter-title, .chapter-content').forEach(normalizeChapterField);
     });
   </script>
 @endsection

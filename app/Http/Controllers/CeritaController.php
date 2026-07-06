@@ -190,16 +190,7 @@ class CeritaController extends Controller
             return $this->sanitizeChapterHtml($content);
         }
 
-        $paragraphs = preg_split('/\n[ \t]*\n+/u', $content) ?: [];
-        $paragraphs = array_map(function ($paragraph) {
-            $lines = array_map('trim', explode("\n", $paragraph));
-            $paragraph = implode(' ', array_filter($lines, static fn ($line) => $line !== ''));
-            $paragraph = preg_replace('/[ \t]+/u', ' ', $paragraph) ?? $paragraph;
-
-            return trim($paragraph);
-        }, $paragraphs);
-
-        return implode("\n\n", array_filter($paragraphs, static fn ($paragraph) => $paragraph !== ''));
+        return trim($content);
     }
 
     private function normalizeChapterTitle(?string $title): string
