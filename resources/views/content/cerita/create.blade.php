@@ -23,29 +23,27 @@
         .replace(/'/g, '&#039;');
     }
 
-    function normalizeChapterText(value) {
+    function normalizeChapterContentText(value) {
       return String(value || '')
         .replace(/\r\n?/g, '\n')
         .replace(/\u00a0/g, ' ')
-        .replace(/[-‐‑‒–—―]+/gu, ' ')
-        .replace(/[ \t]+/g, ' ')
-        .split('\n')
-        .map((line) => line.trim())
-        .join('\n')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
+        .replace(/[ \t]*[-‐‑‒–—―]+[ \t]*/gu, ' ');
+    }
+
+    function normalizeChapterTitleText(value) {
+      return normalizeChapterContentText(value).replace(/\s+/g, ' ').trim();
     }
 
     function normalizeChapterField(field) {
-      field.value = normalizeChapterText(field.value);
-
-      if (field.matches('.chapter-title')) {
-        field.value = field.value.replace(/\s+/g, ' ').trim();
-      }
+      field.value = field.matches('.chapter-title')
+        ? normalizeChapterTitleText(field.value)
+        : normalizeChapterContentText(field.value);
     }
 
     function pasteNormalizedText(field, text) {
-      const normalized = normalizeChapterText(text);
+      const normalized = field.matches('.chapter-title')
+        ? normalizeChapterTitleText(text)
+        : normalizeChapterContentText(text);
       const start = field.selectionStart;
       const end = field.selectionEnd;
 

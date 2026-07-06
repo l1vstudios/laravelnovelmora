@@ -184,14 +184,9 @@ class CeritaController extends Controller
     {
         $content = str_replace(["\r\n", "\r"], "\n", $content ?? '');
         $content = str_replace("\xc2\xa0", ' ', $content);
-        $content = preg_replace('/[-‐‑‒–—―]+/u', ' ', $content) ?? $content;
-        $content = preg_replace('/[ \t]+/u', ' ', $content) ?? $content;
+        $content = preg_replace('/[ \t]*[-‐‑‒–—―]+[ \t]*/u', ' ', $content) ?? $content;
 
-        $lines = array_map(static fn ($line) => trim($line), explode("\n", $content));
-        $content = implode("\n", $lines);
-        $content = preg_replace("/\n{3,}/", "\n\n", $content) ?? $content;
-
-        return trim($content);
+        return $content;
     }
 
     private function normalizeChapterTitle(?string $title): string
