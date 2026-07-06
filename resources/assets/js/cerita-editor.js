@@ -41,6 +41,32 @@ function textToParagraphs(value) {
     .join('');
 }
 
+function textToHtmlKeepingLineBreaks(value) {
+  return String(value || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/\u00a0/g, ' ')
+    .replace(dashPattern, ' ')
+    .split(/\n[ \t]*\n+/)
+    .map((paragraph) => {
+      const lines = paragraph
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      return lines.length ? `<p>${lines.map(escapeHtml).join('<br>')}</p>` : '';
+    })
+    .filter(Boolean)
+    .join('');
+}
+
+function normalizeInitialContent(content) {
+  if (/<[a-z][\s\S]*>/i.test(content)) {
+    return cleanDashInHtml(content);
+  }
+
+  return textToHtmlKeepingLineBreaks(content);
+}
+
 function cleanDashInHtml(html) {
   const wrapper = document.createElement('div');
   wrapper.innerHTML = html;
@@ -78,6 +104,7 @@ window.ChapterEditor = {
     }
 
     textarea.dataset.editorReady = '1';
+    textarea.value = normalizeInitialContent(textarea.value);
 
     tinymce.init({
       target: textarea,
