@@ -73,8 +73,13 @@
                   </h2>
                   <div id="collapse{{ $loop->iteration }}" class="accordion-collapse collapse"
                     aria-labelledby="heading{{ $loop->iteration }}" data-bs-parent="#chaptersAccordion">
-                    <div class="accordion-body" style="white-space: pre-line;">
-                      {{ $chapter['content'] ?? '' }}
+                    <div class="accordion-body">
+                      @php($chapterContent = $chapter['content'] ?? '')
+                      @if ($chapterContent !== strip_tags($chapterContent))
+                        {!! $chapterContent !!}
+                      @else
+                        {!! nl2br(e($chapterContent)) !!}
+                      @endif
                     </div>
                   </div>
                 </div>

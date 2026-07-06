@@ -186,6 +186,10 @@ class CeritaController extends Controller
         $content = str_replace("\xc2\xa0", ' ', $content);
         $content = preg_replace('/[ \t]*[-‐‑‒–—―]+[ \t]*/u', ' ', $content) ?? $content;
 
+        if ($content !== strip_tags($content)) {
+            return $this->sanitizeChapterHtml($content);
+        }
+
         $paragraphs = preg_split('/\n[ \t]*\n+/u', $content) ?: [];
         $paragraphs = array_map(function ($paragraph) {
             $lines = array_map('trim', explode("\n", $paragraph));
@@ -205,5 +209,15 @@ class CeritaController extends Controller
         $title = preg_replace('/\s+/u', ' ', $title) ?? $title;
 
         return trim($title);
+    }
+
+    private function sanitizeChapterHtml(string $content): string
+    {
+        $allowedTags = '<p><br><strong><b><em><i><u><blockquote><ul><ol><li><h3><h4><pre><code>';
+        $content = strip_tags($content, $allowedTags);
+        $content = preg_replace('/<([a-z][a-z0-9]*)\b[^>]*>/i', '<$1>', $content) ?? $content;
+        $content = preg_replace('/<p>\s*<\/p>/i', '', $content) ?? $content;
+
+        return trim($content);
     }
 }

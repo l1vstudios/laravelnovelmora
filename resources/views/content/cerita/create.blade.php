@@ -1,6 +1,7 @@
 @extends('layouts/contentNavbarLayout')
 @section('title', 'Tambah Cerita')
 @section('page-script')
+  @vite(['resources/assets/js/cerita-editor.js'])
   <script>
     function previewCover(input) {
       const preview = document.getElementById('cover-preview');
@@ -24,21 +25,10 @@
     }
 
     function normalizeChapterContentText(value) {
-      const paragraphs = String(value || '')
+      return String(value || '')
         .replace(/\r\n?/g, '\n')
         .replace(/\u00a0/g, ' ')
-        .replace(/[ \t]*[-‐‑‒–—―]+[ \t]*/gu, ' ')
-        .split(/\n[ \t]*\n+/)
-        .map((paragraph) => paragraph
-          .split('\n')
-          .map((line) => line.trim())
-          .filter(Boolean)
-          .join(' ')
-          .replace(/[ \t]+/g, ' ')
-          .trim())
-        .filter(Boolean);
-
-      return paragraphs.join('\n\n');
+        .replace(/[ \t]*[-‐‑‒–—―]+[ \t]*/gu, ' ');
     }
 
     function normalizeChapterTitleText(value) {
@@ -52,15 +42,22 @@
     }
 
     function pasteNormalizedText(field, text) {
-      const normalized = field.matches('.chapter-title')
-        ? normalizeChapterTitleText(text)
-        : normalizeChapterContentText(text);
+      const normalized = normalizeChapterTitleText(text);
       const start = field.selectionStart;
       const end = field.selectionEnd;
 
       field.value = `${field.value.slice(0, start)}${normalized}${field.value.slice(end)}`;
       field.selectionStart = field.selectionEnd = start + normalized.length;
       field.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function initializeChapterEditor(textarea) {
+      if (window.ChapterEditor) {
+        window.ChapterEditor.init(textarea);
+        return;
+      }
+
+      window.addEventListener('chapter-editor-ready', () => window.ChapterEditor.init(textarea), { once: true });
     }
 
     function renderAdsOptions(chapterNumber, selectedAds = []) {
@@ -113,7 +110,7 @@
                 <input type="text" name="chapter_titles[]" id="title_${chapterCount}" class="form-control chapter-title"
                     placeholder="Tulis judul chapter ${chapterCount}..." value="${escapeHtml(title)}">
             </div>
-            <textarea name="chapters[]" rows="5" class="form-control chapter-content"
+            <textarea name="chapters[]" id="content_${chapterCount}" rows="5" class="form-control chapter-content"
                 placeholder="Tulis isi chapter ${chapterCount}...">${escapeHtml(content)}</textarea>
             <div class="mt-4 pt-4 border-top">
                 <label class="form-label mb-2">Sisipkan Ads setelah chapter ini</label>
@@ -121,11 +118,14 @@
             </div>
         </div>`;
       container.appendChild(div);
+      initializeChapterEditor(div.querySelector('.chapter-content'));
       renumberChapters();
     }
 
     function removeChapter(btn) {
-      btn.closest('.chapter-row').remove();
+      const row = btn.closest('.chapter-row');
+      window.ChapterEditor?.remove(row.querySelector('.chapter-content'));
+      row.remove();
       renumberChapters();
     }
 
@@ -156,7 +156,7 @@
     }
 
     document.addEventListener('paste', function(event) {
-      const field = event.target.closest('.chapter-title, .chapter-content');
+      const field = event.target.closest('.chapter-title');
       if (!field) return;
 
       event.preventDefault();
@@ -164,15 +164,17 @@
     });
 
     document.addEventListener('blur', function(event) {
-      if (event.target.matches('.chapter-title, .chapter-content')) {
+      if (event.target.matches('.chapter-title')) {
         normalizeChapterField(event.target);
       }
     }, true);
 
     document.addEventListener('submit', function(event) {
-      if (!event.target.querySelector('.chapter-title, .chapter-content')) return;
+      window.ChapterEditor?.syncAll();
 
-      event.target.querySelectorAll('.chapter-title, .chapter-content').forEach(normalizeChapterField);
+      if (!event.target.querySelector('.chapter-title')) return;
+
+      event.target.querySelectorAll('.chapter-title').forEach(normalizeChapterField);
     });
   </script>
 @endsection
