@@ -36,6 +36,46 @@ function normalizeChapterTitleText(value) {
     return normalizeChapterContentText(value).replace(/\s+/g, ' ').trim();
 }
 
+function normalizePastedChapterContentText(value) {
+    const text = normalizeChapterContentText(value);
+
+    if (/\n\s*\n/.test(text)) {
+        return text;
+    }
+
+    const lines = text
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+    if (lines.length < 4) {
+        return text;
+    }
+
+    const paragraphs = [];
+    let current = [];
+    let currentLength = 0;
+
+    lines.forEach((line, index) => {
+        const nextLine = lines[index + 1] || '';
+        current.push(line);
+        currentLength += line.length + 1;
+
+        const endsSentence = /[.!?]["')\]]?$/.test(line);
+        const nextStartsSentence = /^["'“‘]?[A-Z0-9]/.test(nextLine);
+        const shouldBreak = index === lines.length - 1
+            || (endsSentence && nextStartsSentence && currentLength >= 350);
+
+        if (shouldBreak) {
+            paragraphs.push(current.join(' '));
+            current = [];
+            currentLength = 0;
+        }
+    });
+
+    return paragraphs.join('\n\n');
+}
+
 function normalizeChapterField(field) {
     field.value = field.matches('.chapter-title')
         ? normalizeChapterTitleText(field.value)
@@ -45,7 +85,7 @@ function normalizeChapterField(field) {
 function pasteNormalizedText(field, text) {
     const normalized = field.matches('.chapter-title')
         ? normalizeChapterTitleText(text)
-        : normalizeChapterContentText(text);
+        : normalizePastedChapterContentText(text);
     const start = field.selectionStart;
     const end = field.selectionEnd;
 
