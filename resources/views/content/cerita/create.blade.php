@@ -27,7 +27,7 @@
       return String(value || '')
         .replace(/\r\n?/g, '\n')
         .replace(/\u00a0/g, ' ')
-        .replace(/--/g, '')
+        .replace(/[-‐‑‒–—―]+/gu, ' ')
         .replace(/[ \t]+/g, ' ')
         .split('\n')
         .map((line) => line.trim())
