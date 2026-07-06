@@ -13,6 +13,8 @@ import 'tinymce/skins/ui/oxide/content.css';
 import 'tinymce/skins/content/default/content.css';
 
 const dashPattern = /[ \t]*[-‐‑‒–—―]+[ \t]*/gu;
+const longParagraphLength = 900;
+const maxSentencesPerParagraph = 4;
 
 function escapeHtml(value) {
   return String(value)
@@ -41,6 +43,48 @@ function textToParagraphs(value) {
     .join('');
 }
 
+function splitLongTextIntoParagraphs(text) {
+  const normalized = String(text || '').replace(/[ \t]+/g, ' ').trim();
+
+  if (normalized.length <= longParagraphLength) {
+    return normalized ? [normalized] : [];
+  }
+
+  const sentences = normalized.match(/[^.!?]+[.!?]+["')\]]*|[^.!?]+$/g)
+    ?.map((sentence) => sentence.trim())
+    .filter(Boolean) || [normalized];
+
+  const paragraphs = [];
+  let current = [];
+  let currentLength = 0;
+
+  sentences.forEach((sentence) => {
+    const shouldStartNewParagraph = current.length >= maxSentencesPerParagraph
+      || (currentLength > 450 && current.length > 1);
+
+    if (shouldStartNewParagraph) {
+      paragraphs.push(current.join(' '));
+      current = [];
+      currentLength = 0;
+    }
+
+    current.push(sentence);
+    currentLength += sentence.length;
+  });
+
+  if (current.length) {
+    paragraphs.push(current.join(' '));
+  }
+
+  return paragraphs;
+}
+
+function paragraphHtmlFromText(text) {
+  return splitLongTextIntoParagraphs(text)
+    .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+    .join('');
+}
+
 function textToHtmlKeepingLineBreaks(value) {
   return String(value || '')
     .replace(/\r\n?/g, '\n')
@@ -53,7 +97,13 @@ function textToHtmlKeepingLineBreaks(value) {
         .map((line) => line.trim())
         .filter(Boolean);
 
-      return lines.length ? `<p>${lines.map(escapeHtml).join('<br>')}</p>` : '';
+      if (!lines.length) return '';
+
+      if (lines.length === 1) {
+        return paragraphHtmlFromText(lines[0]);
+      }
+
+      return `<p>${lines.map(escapeHtml).join('<br>')}</p>`;
     })
     .filter(Boolean)
     .join('');
@@ -61,10 +111,30 @@ function textToHtmlKeepingLineBreaks(value) {
 
 function normalizeInitialContent(content) {
   if (/<[a-z][\s\S]*>/i.test(content)) {
-    return cleanDashInHtml(content);
+    return splitLongSingleParagraphs(cleanDashInHtml(content));
   }
 
   return textToHtmlKeepingLineBreaks(content);
+}
+
+function splitLongSingleParagraphs(html) {
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+
+  wrapper.querySelectorAll('p').forEach((paragraph) => {
+    const hasFormatting = paragraph.children.length > 0;
+    const text = paragraph.textContent?.trim() || '';
+
+    if (hasFormatting || text.length <= longParagraphLength) {
+      return;
+    }
+
+    const template = document.createElement('template');
+    template.innerHTML = paragraphHtmlFromText(text);
+    paragraph.replaceWith(...template.content.childNodes);
+  });
+
+  return wrapper.innerHTML;
 }
 
 function cleanDashInHtml(html) {
