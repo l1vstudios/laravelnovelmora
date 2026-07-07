@@ -18,14 +18,24 @@ class CeritaControllerTest extends TestCase
         $this->assertSame('Dia berlari - lari menuju rumah.', $content);
     }
 
-    public function test_chapter_title_preserves_dash_and_normalizes_dash_variants(): void
+    public function test_chapter_title_removes_decorative_dash_variants(): void
     {
         $title = $this->callPrivateNormalizeMethod(
             'normalizeChapterTitle',
             'Awal – Akhir'
         );
 
-        $this->assertSame('Awal - Akhir', $title);
+        $this->assertSame('Awal Akhir', $title);
+    }
+
+    public function test_chapter_content_removes_repeated_dash_but_preserves_single_dash(): void
+    {
+        $content = $this->callPrivateNormalizeMethod(
+            'normalizeChapterContent',
+            'bayang-bayang sendiri----dunia'
+        );
+
+        $this->assertSame('bayang-bayang sendiri dunia', $content);
     }
 
     private function callPrivateNormalizeMethod(string $method, ?string $value): string

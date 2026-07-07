@@ -184,7 +184,7 @@ class CeritaController extends Controller
     {
         $content = str_replace(["\r\n", "\r"], "\n", $content ?? '');
         $content = str_replace("\xc2\xa0", ' ', $content);
-        $content = preg_replace('/[‐‑‒–—―]+/u', '-', $content) ?? $content;
+        $content = $this->removeDecorativeDashes($content);
 
         if ($content !== strip_tags($content)) {
             return $this->sanitizeChapterHtml($content);
@@ -196,10 +196,17 @@ class CeritaController extends Controller
     private function normalizeChapterTitle(?string $title): string
     {
         $title = str_replace("\xc2\xa0", ' ', $title ?? '');
-        $title = preg_replace('/[‐‑‒–—―]+/u', '-', $title) ?? $title;
+        $title = $this->removeDecorativeDashes($title);
         $title = preg_replace('/\s+/u', ' ', $title) ?? $title;
 
         return trim($title);
+    }
+
+    private function removeDecorativeDashes(string $value): string
+    {
+        $value = preg_replace('/[‐‑‒–—―]+/u', ' ', $value) ?? $value;
+
+        return preg_replace('/-{2,}/u', ' ', $value) ?? $value;
     }
 
     private function sanitizeChapterHtml(string $content): string
