@@ -184,7 +184,7 @@ class CeritaController extends Controller
     {
         $content = str_replace(["\r\n", "\r"], "\n", $content ?? '');
         $content = str_replace("\xc2\xa0", ' ', $content);
-        $content = preg_replace('/[ \t]*[-‐‑‒–—―]+[ \t]*/u', ' ', $content) ?? $content;
+        $content = preg_replace('/[‐‑‒–—―]+/u', '-', $content) ?? $content;
 
         if ($content !== strip_tags($content)) {
             return $this->sanitizeChapterHtml($content);
@@ -196,7 +196,7 @@ class CeritaController extends Controller
     private function normalizeChapterTitle(?string $title): string
     {
         $title = str_replace("\xc2\xa0", ' ', $title ?? '');
-        $title = preg_replace('/[-‐‑‒–—―]+/u', ' ', $title) ?? $title;
+        $title = preg_replace('/[‐‑‒–—―]+/u', '-', $title) ?? $title;
         $title = preg_replace('/\s+/u', ' ', $title) ?? $title;
 
         return trim($title);

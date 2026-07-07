@@ -27,7 +27,7 @@
       return String(value || '')
         .replace(/\r\n?/g, '\n')
         .replace(/\u00a0/g, ' ')
-        .replace(/[ \t]*[-‐‑‒–—―]+[ \t]*/gu, ' ');
+        .replace(/[‐‑‒–—―]+/gu, '-');
     }
 
     function normalizeChapterTitleText(value) {
