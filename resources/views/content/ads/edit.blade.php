@@ -3,7 +3,19 @@
 
 @section('content')
 @php
-    $selectedPlacements = $ad->placements->groupBy('cerita_id')->map(fn($items) => $items->pluck('after_chapter')->values()->all())->toArray();
+    $selectedPlacements = $ad->placements
+        ->groupBy('cerita_id')
+        ->map(fn($storyItems) => $storyItems
+            ->groupBy(fn($placement) => $placement->placement_position ?: 'after')
+            ->map(fn($positionItems) => $positionItems
+                ->map(fn($placement) => [
+                    'chapter' => (int) $placement->after_chapter,
+                    'is_global' => (bool) $placement->is_global,
+                ])
+                ->values()
+                ->all())
+            ->toArray())
+        ->toArray();
 @endphp
 <div class="row justify-content-center">
     <div class="col-md-9">

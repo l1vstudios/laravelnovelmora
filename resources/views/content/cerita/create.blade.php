@@ -105,25 +105,42 @@
       return wrapper.textContent.replace(/\n{3,}/g, '\n\n').trim();
     }
 
-    function renderAdsOptions(chapterNumber, selectedAds = []) {
+    function renderAdsOptions(chapterNumber, selectedAds = {}) {
       if (!availableAds.length) {
         return '<small class="text-muted">Belum ada ads aktif.</small>';
       }
 
-      const selected = selectedAds.map(String);
+      const selectedBefore = Array.isArray(selectedAds)
+        ? []
+        : (selectedAds.before || []).map(String);
+      const selectedAfter = Array.isArray(selectedAds)
+        ? selectedAds.map(String)
+        : (selectedAds.after || []).map(String);
 
-      return availableAds.map((ad) => {
-        const checked = selected.includes(String(ad.id)) ? 'checked' : '';
-        const label = `${escapeHtml(ad.title)} (${ad.media_type === 'video' ? 'Video' : 'Gambar'})`;
-
+      function renderPosition(position, label, selected) {
         return `
-          <div class="form-check form-check-inline mb-2">
-            <input class="form-check-input chapter-ad" type="checkbox"
-              name="ads_after_chapters[${chapterNumber}][]" value="${ad.id}"
-              id="ad_${chapterNumber}_${ad.id}" ${checked}>
-            <label class="form-check-label" for="ad_${chapterNumber}_${ad.id}">${label}</label>
+          <div class="mb-3">
+            <small class="text-muted d-block mb-2">${label}</small>
+            <div class="d-flex flex-wrap gap-3">
+              ${availableAds.map((ad) => {
+                const checked = selected.includes(String(ad.id)) ? 'checked' : '';
+                const adLabel = `${escapeHtml(ad.title)} (${ad.media_type === 'video' ? 'Video' : 'Gambar'})`;
+
+                return `
+                  <div class="form-check form-check-inline mb-2">
+                    <input class="form-check-input chapter-ad" type="checkbox"
+                      data-position="${position}"
+                      name="ads_${position}_chapters[${chapterNumber}][]" value="${ad.id}"
+                      id="ad_${position}_${chapterNumber}_${ad.id}" ${checked}>
+                    <label class="form-check-label" for="ad_${position}_${chapterNumber}_${ad.id}">${adLabel}</label>
+                  </div>`;
+              }).join('')}
+            </div>
           </div>`;
-      }).join('');
+      }
+
+      return renderPosition('before', 'Sebelum chapter ini', selectedBefore)
+        + renderPosition('after', 'Setelah chapter ini', selectedAfter);
     }
 
     let chapterCount = 0;
@@ -159,8 +176,8 @@
             <textarea name="chapters[]" id="content_${chapterCount}" rows="5" class="form-control chapter-content"
                 placeholder="Tulis isi chapter ${chapterCount}...">${escapeHtml(chapterContent)}</textarea>
             <div class="mt-4 pt-4 border-top">
-                <label class="form-label mb-2">Sisipkan Ads setelah chapter ini</label>
-                <div class="d-flex flex-wrap gap-3">${adsMarkup}</div>
+                <label class="form-label mb-2">Sisipkan Ads</label>
+                ${adsMarkup}
             </div>
         </div>`;
       container.appendChild(div);
@@ -189,9 +206,10 @@
         row.querySelector('.chapter-content').placeholder = `Tulis isi chapter ${num}...`;
 
         row.querySelectorAll('.chapter-ad').forEach((adInput) => {
-          adInput.name = `ads_after_chapters[${num}][]`;
-          adInput.id = `ad_${num}_${adInput.value}`;
-          const adLabel = row.querySelector(`label[for^="ad_"][for$="_${adInput.value}"]`);
+          const position = adInput.dataset.position || 'after';
+          adInput.name = `ads_${position}_chapters[${num}][]`;
+          adInput.id = `ad_${position}_${num}_${adInput.value}`;
+          const adLabel = adInput.nextElementSibling;
           if (adLabel) adLabel.setAttribute('for', adInput.id);
         });
       });
@@ -355,12 +373,16 @@
         const oldTitles = @json(old('chapter_titles', []));
         const oldLocks = @json(old('locked_chapters', []));
         const oldAds = @json(old('ads_after_chapters', []));
+        const oldBeforeAds = @json(old('ads_before_chapters', []));
 
         oldChapters.forEach((content, i) => {
           const title = oldTitles[i] || '';
           const chapterNum = i + 1;
           const locked = oldLocks.includes(String(chapterNum));
-          const ads = oldAds[chapterNum] || [];
+          const ads = {
+            before: oldBeforeAds[chapterNum] || [],
+            after: oldAds[chapterNum] || [],
+          };
           addChapter(title, content, locked, ads);
         });
       }

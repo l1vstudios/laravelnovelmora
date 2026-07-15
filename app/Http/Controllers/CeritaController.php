@@ -41,6 +41,9 @@ class CeritaController extends Controller
             'ads_after_chapters'      => 'nullable|array',
             'ads_after_chapters.*'    => 'nullable|array',
             'ads_after_chapters.*.*'  => 'integer|exists:mst_ads,id',
+            'ads_before_chapters'     => 'nullable|array',
+            'ads_before_chapters.*'   => 'nullable|array',
+            'ads_before_chapters.*.*' => 'integer|exists:mst_ads,id',
             'chapter_titles'          => 'nullable|array',
             'chapter_titles.*'        => 'nullable|string|max:255',
             'chapters'                => 'nullable|array',
@@ -104,6 +107,9 @@ class CeritaController extends Controller
             'ads_after_chapters'      => 'nullable|array',
             'ads_after_chapters.*'    => 'nullable|array',
             'ads_after_chapters.*.*'  => 'integer|exists:mst_ads,id',
+            'ads_before_chapters'     => 'nullable|array',
+            'ads_before_chapters.*'   => 'nullable|array',
+            'ads_before_chapters.*.*' => 'integer|exists:mst_ads,id',
             'chapter_titles'          => 'nullable|array',
             'chapter_titles.*'        => 'nullable|string|max:255',
             'chapters'                => 'nullable|array',
@@ -152,26 +158,46 @@ class CeritaController extends Controller
 
     private function syncAdPlacements(Cerita $cerita, Request $request, int $chapterTotal): void
     {
+        $globalPlacements = $cerita->adPlacements()
+            ->get(['ad_id', 'after_chapter', 'placement_position', 'is_global'])
+            ->mapWithKeys(function ($placement) {
+                $position = $placement->placement_position ?: 'after';
+
+                return [
+                    $position . ':' . $placement->after_chapter . ':' . $placement->ad_id => (bool) $placement->is_global,
+                ];
+            });
+
         $cerita->adPlacements()->delete();
 
         $placements = [];
         $now = now();
 
-        foreach ($request->input('ads_after_chapters', []) as $chapter => $adIds) {
-            $chapterNumber = (int) $chapter;
+        foreach ([
+            'before' => 'ads_before_chapters',
+            'after' => 'ads_after_chapters',
+        ] as $position => $inputName) {
+            foreach ($request->input($inputName, []) as $chapter => $adIds) {
+                $chapterNumber = (int) $chapter;
 
-            if ($chapterNumber < 1 || $chapterNumber > $chapterTotal || !is_array($adIds)) {
-                continue;
-            }
+                if ($chapterNumber < 1 || $chapterNumber > $chapterTotal || !is_array($adIds)) {
+                    continue;
+                }
 
-            foreach (array_unique($adIds) as $adId) {
-                $placements[] = [
-                    'cerita_id'      => $cerita->id,
-                    'ad_id'          => (int) $adId,
-                    'after_chapter'  => $chapterNumber,
-                    'created_at'     => $now,
-                    'updated_at'     => $now,
-                ];
+                foreach (array_unique($adIds) as $adId) {
+                    $adId = (int) $adId;
+                    $globalKey = $position . ':' . $chapterNumber . ':' . $adId;
+
+                    $placements[] = [
+                        'cerita_id'          => $cerita->id,
+                        'ad_id'              => $adId,
+                        'after_chapter'      => $chapterNumber,
+                        'placement_position' => $position,
+                        'is_global'          => (bool) ($globalPlacements[$globalKey] ?? false),
+                        'created_at'         => $now,
+                        'updated_at'         => $now,
+                    ];
+                }
             }
         }
 

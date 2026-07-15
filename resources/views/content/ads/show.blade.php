@@ -70,15 +70,23 @@
             <div class="card-header"><h6 class="mb-0">Penempatan di Cerita</h6></div>
             <div class="table-responsive text-nowrap">
                 <table class="table">
-                    <thead><tr><th>Cerita</th><th>Setelah Chapter</th></tr></thead>
+                    <thead><tr><th>Cerita</th><th>Posisi</th><th>Chapter</th><th>Scope</th></tr></thead>
                     <tbody>
                         @forelse($ad->placements as $placement)
                         <tr>
                             <td>{{ $placement->cerita->judul ?? '-' }}</td>
+                            <td>{{ ($placement->placement_position ?? 'after') === 'before' ? 'Sebelum' : 'Setelah' }}</td>
                             <td>Chapter {{ $placement->after_chapter }}</td>
+                            <td>
+                                @if($placement->is_global)
+                                    <span class="badge bg-label-primary">Global</span>
+                                @else
+                                    <span class="badge bg-label-secondary">Manual</span>
+                                @endif
+                            </td>
                         </tr>
                         @empty
-                        <tr><td colspan="2" class="text-center py-5 text-muted">Belum dipasang di cerita mana pun.</td></tr>
+                        <tr><td colspan="4" class="text-center py-5 text-muted">Belum dipasang di cerita mana pun.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

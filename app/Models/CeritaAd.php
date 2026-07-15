@@ -12,6 +12,12 @@ class CeritaAd extends Model
         'cerita_id',
         'ad_id',
         'after_chapter',
+        'placement_position',
+        'is_global',
+    ];
+
+    protected $casts = [
+        'is_global' => 'boolean',
     ];
 
     public function cerita()

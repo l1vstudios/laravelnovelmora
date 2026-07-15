@@ -30,7 +30,10 @@ class Ad extends Model
 
     public function placements()
     {
-        return $this->hasMany(CeritaAd::class, 'ad_id');
+        return $this->hasMany(CeritaAd::class, 'ad_id')
+            ->orderBy('cerita_id')
+            ->orderBy('after_chapter')
+            ->orderBy('placement_position');
     }
 
     public function getMediaSrcAttribute(): string

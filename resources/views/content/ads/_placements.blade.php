@@ -1,5 +1,6 @@
 @php
     $selectedPlacements = old('placements', $selectedPlacements ?? []);
+    $globalFlags = old('placement_global', []);
     $placementStories = $ceritas->map(function ($cerita) {
         return [
             'id' => (int) $cerita->id,
@@ -10,25 +11,44 @@
     $storiesById = $placementStories->keyBy('id');
     $initialPlacements = [];
 
-    foreach ((array) $selectedPlacements as $ceritaId => $chapters) {
+    foreach ((array) $selectedPlacements as $ceritaId => $positions) {
         $story = $storiesById->get((int) $ceritaId);
 
-        if (!$story) {
+        if (!$story || !is_array($positions)) {
             continue;
         }
 
-        foreach ((array) $chapters as $chapter) {
-            $chapterNumber = (int) $chapter;
+        $normalizedPositions = array_intersect_key($positions, array_flip(['before', 'after']));
 
-            if ($chapterNumber < 1 || $chapterNumber > $story['chapter_total']) {
+        if (!$normalizedPositions && array_is_list($positions)) {
+            $normalizedPositions = ['after' => $positions];
+        }
+
+        foreach ($normalizedPositions as $position => $chapters) {
+            if (!in_array($position, ['before', 'after'], true) || !is_array($chapters)) {
                 continue;
             }
 
-            $initialPlacements[] = [
-                'story_id' => $story['id'],
-                'story_title' => $story['title'],
-                'chapter' => $chapterNumber,
-            ];
+            foreach ($chapters as $chapter) {
+                $isGlobal = false;
+                $chapterNumber = is_array($chapter) ? (int) ($chapter['chapter'] ?? 0) : (int) $chapter;
+
+                if (is_array($chapter)) {
+                    $isGlobal = (bool) ($chapter['is_global'] ?? false);
+                }
+
+                if ($chapterNumber < 1 || $chapterNumber > $story['chapter_total']) {
+                    continue;
+                }
+
+                $initialPlacements[] = [
+                    'story_id' => $story['id'],
+                    'story_title' => $story['title'],
+                    'position' => $position,
+                    'chapter' => $chapterNumber,
+                    'is_global' => $isGlobal || isset($globalFlags[$story['id']][$position][$chapterNumber]),
+                ];
+            }
         }
     }
 @endphp
@@ -40,15 +60,27 @@
         <div class="alert alert-info mb-0">Belum ada cerita untuk dipasangkan ads.</div>
     @else
         <div id="ads-placement-picker" class="border rounded p-4">
+            <div class="form-check form-switch mb-4">
+                <input class="form-check-input" type="checkbox" id="placement-all-stories">
+                <label class="form-check-label" for="placement-all-stories">Pilih semua cerita</label>
+            </div>
+
             <div class="row g-4 align-items-end">
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <label class="form-label">Judul Novel</label>
                     <div class="position-relative">
                         <input type="text" id="placement-story-search" class="form-control" placeholder="Cari judul novel..." autocomplete="off">
                         <div id="placement-story-menu" class="dropdown-menu w-100 mt-1" style="max-height:220px;overflow:auto;"></div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
+                    <label class="form-label">Posisi</label>
+                    <select id="placement-position" class="form-select">
+                        <option value="after">Setelah</option>
+                        <option value="before">Sebelum</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <label class="form-label">Chapter</label>
                     <div class="position-relative">
                         <input type="text" id="placement-chapter-search" class="form-control" placeholder="Pilih novel dulu" autocomplete="off" disabled>
@@ -82,6 +114,8 @@
 
     const storyInput = document.getElementById('placement-story-search');
     const storyMenu = document.getElementById('placement-story-menu');
+    const allStoriesInput = document.getElementById('placement-all-stories');
+    const positionInput = document.getElementById('placement-position');
     const chapterInput = document.getElementById('placement-chapter-search');
     const chapterMenu = document.getElementById('placement-chapter-menu');
     const addButton = document.getElementById('placement-add');
@@ -97,8 +131,12 @@
             .replace(/'/g, '&#039;');
     }
 
-    function key(storyId, chapter) {
-        return `${storyId}:${chapter}`;
+    function key(storyId, position, chapter) {
+        return `${storyId}:${position}:${chapter}`;
+    }
+
+    function positionLabel(position) {
+        return position === 'before' ? 'Sebelum' : 'Setelah';
     }
 
     function showMenu(menu) {
@@ -110,7 +148,31 @@
         chapterMenu.classList.remove('show');
     }
 
+    function selectedAllStories() {
+        return allStoriesInput.checked;
+    }
+
+    function eligibleStories(chapter) {
+        if (!selectedAllStories()) {
+            return selectedStory && chapter <= selectedStory.chapter_total ? [selectedStory] : [];
+        }
+
+        return stories.filter((story) => chapter <= story.chapter_total);
+    }
+
+    function chapterLimit() {
+        if (selectedAllStories()) {
+            return Math.max(...stories.map((story) => story.chapter_total));
+        }
+
+        return selectedStory ? selectedStory.chapter_total : 0;
+    }
+
     function renderStoryMenu(search = '') {
+        if (selectedAllStories()) {
+            return;
+        }
+
         const needle = search.trim().toLowerCase();
         const filtered = stories.filter((story) => story.title.toLowerCase().includes(needle));
 
@@ -127,17 +189,26 @@
     }
 
     function renderChapterMenu(search = '') {
-        if (!selectedStory) {
+        const limit = chapterLimit();
+
+        if (!limit) {
             return;
         }
 
         const needle = search.trim().toLowerCase();
         const chapters = [];
+        const position = positionInput.value;
 
-        for (let chapter = 1; chapter <= selectedStory.chapter_total; chapter++) {
-            const label = `Setelah Chapter ${chapter}`;
+        for (let chapter = 1; chapter <= limit; chapter++) {
+            const storyCount = eligibleStories(chapter).length;
+
+            if (!storyCount) {
+                continue;
+            }
+
+            const label = `${positionLabel(position)} Chapter ${chapter}`;
             if (!needle || label.toLowerCase().includes(needle) || String(chapter).includes(needle)) {
-                chapters.push({ chapter, label });
+                chapters.push({ chapter, label, storyCount });
             }
         }
 
@@ -147,6 +218,7 @@
                     <input type="checkbox" class="form-check-input m-0 placement-chapter-check"
                         value="${item.chapter}" ${selectedChapters.has(item.chapter) ? 'checked' : ''}>
                     <span>${escapeHtml(item.label)}</span>
+                    ${selectedAllStories() ? `<small class="text-muted ms-auto">${item.storyCount} cerita</small>` : ''}
                 </label>
             `).join('')
             : '<span class="dropdown-item-text text-muted">Chapter tidak ditemukan.</span>';
@@ -157,11 +229,13 @@
     function renderSelected() {
         selectedWrap.innerHTML = Array.from(selected.values()).map((item) => `
             <span class="badge bg-label-primary d-inline-flex align-items-center gap-2 px-3 py-2">
-                ${escapeHtml(item.story_title)} - Setelah Chapter ${item.chapter}
-                <button type="button" class="btn btn-sm p-0 text-primary" data-remove="${item.story_id}:${item.chapter}" aria-label="Hapus">
+                ${escapeHtml(item.story_title)} - ${positionLabel(item.position)} Chapter ${item.chapter}
+                ${item.is_global ? '<span class="badge bg-primary">Global</span>' : ''}
+                <button type="button" class="btn btn-sm p-0 text-primary" data-remove="${item.story_id}:${item.position}:${item.chapter}" aria-label="Hapus">
                     <i class="icon-base bx bx-x"></i>
                 </button>
-                <input type="hidden" name="placements[${item.story_id}][]" value="${item.chapter}">
+                <input type="hidden" name="placements[${item.story_id}][${item.position}][]" value="${item.chapter}">
+                ${item.is_global ? `<input type="hidden" name="placement_global[${item.story_id}][${item.position}][${item.chapter}]" value="1">` : ''}
             </span>
         `).join('');
 
@@ -171,8 +245,8 @@
     function resetChapterPicker() {
         selectedChapters = new Set();
         chapterInput.value = '';
-        chapterInput.disabled = !selectedStory;
-        chapterInput.placeholder = selectedStory ? 'Cari dan pilih chapter...' : 'Pilih novel dulu';
+        chapterInput.disabled = !selectedAllStories() && !selectedStory;
+        chapterInput.placeholder = selectedAllStories() || selectedStory ? 'Cari dan pilih chapter...' : 'Pilih novel dulu';
         chapterMenu.innerHTML = '';
     }
 
@@ -184,12 +258,12 @@
 
         const chapters = Array.from(selectedChapters).sort((a, b) => a - b);
         chapterInput.value = chapters.length === 1
-            ? `Setelah Chapter ${chapters[0]}`
+            ? `${positionLabel(positionInput.value)} Chapter ${chapters[0]}`
             : `${chapters.length} chapter dipilih`;
     }
 
     initialPlacements.forEach((item) => {
-        selected.set(key(item.story_id, item.chapter), item);
+        selected.set(key(item.story_id, item.position, item.chapter), item);
     });
     renderSelected();
 
@@ -214,6 +288,20 @@
         renderChapterMenu();
     });
 
+    allStoriesInput.addEventListener('change', () => {
+        selectedStory = null;
+        storyInput.value = selectedAllStories() ? 'Semua cerita' : '';
+        storyInput.disabled = selectedAllStories();
+        storyInput.dataset.storyId = '';
+        hideMenus();
+        resetChapterPicker();
+    });
+
+    positionInput.addEventListener('change', () => {
+        updateChapterInputLabel();
+        renderChapterMenu(chapterInput.value);
+    });
+
     chapterInput.addEventListener('focus', () => renderChapterMenu(chapterInput.value));
     chapterInput.addEventListener('input', () => {
         renderChapterMenu(chapterInput.value);
@@ -234,15 +322,24 @@
     });
 
     addButton.addEventListener('click', () => {
-        if (!selectedStory || !selectedChapters.size) {
+        if ((!selectedStory && !selectedAllStories()) || !selectedChapters.size) {
             return;
         }
 
+        const position = positionInput.value;
+
         selectedChapters.forEach((chapter) => {
-            selected.set(key(selectedStory.id, chapter), {
-                story_id: selectedStory.id,
-                story_title: selectedStory.title,
-                chapter,
+            eligibleStories(chapter).forEach((story) => {
+                const placementKey = key(story.id, position, chapter);
+                const existing = selected.get(placementKey);
+
+                selected.set(placementKey, {
+                    story_id: story.id,
+                    story_title: story.title,
+                    position,
+                    chapter,
+                    is_global: selectedAllStories() || Boolean(existing?.is_global),
+                });
             });
         });
 

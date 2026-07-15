@@ -49,6 +49,43 @@
           </div>
 
           <div class="d-flex align-items-center justify-content-between mb-4">
+            <h6 class="mb-0 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em;">Ads Cerita</h6>
+          </div>
+
+          @if ($cerita->adPlacements->isNotEmpty())
+            <div class="table-responsive text-nowrap mb-5">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Ads</th>
+                    <th>Posisi</th>
+                    <th>Chapter</th>
+                    <th>Scope</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach ($cerita->adPlacements as $placement)
+                    <tr>
+                      <td>{{ $placement->ad->title ?? '-' }}</td>
+                      <td>{{ ($placement->placement_position ?? 'after') === 'before' ? 'Sebelum' : 'Setelah' }}</td>
+                      <td>Chapter {{ $placement->after_chapter }}</td>
+                      <td>
+                        @if ($placement->is_global)
+                          <span class="badge bg-label-primary">Global</span>
+                        @else
+                          <span class="badge bg-label-secondary">Manual</span>
+                        @endif
+                      </td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+          @else
+            <p class="text-muted mb-5">Belum ada ads yang dipasang di cerita ini.</p>
+          @endif
+
+          <div class="d-flex align-items-center justify-content-between mb-4">
             <h6 class="mb-0 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em;">Isi Cerita
               ({{ $cerita->parts }} Chapters)</h6>
           </div>

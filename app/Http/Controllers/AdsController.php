@@ -51,9 +51,11 @@ class AdsController extends Controller
             'status'            => 'required|boolean',
             'placements'        => 'nullable|array',
             'placements.*'      => 'nullable|array',
-            'placements.*.*'    => 'integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
+            'placements.*.*'    => 'nullable|array',
+            'placements.*.*.*'  => 'integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
+            'placement_global'  => 'nullable|array',
         ], [
-            'placements.*.*.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
+            'placements.*.*.*.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
         ]);
 
         if ($request->hasFile('media_file')) {
@@ -61,7 +63,7 @@ class AdsController extends Controller
             $data['media_url'] = Storage::url($data['media_path']);
         }
 
-        unset($data['media_file'], $data['placements']);
+        unset($data['media_file'], $data['placements'], $data['placement_global']);
         $data['status'] = $request->boolean('status');
 
         $ad = Ad::create($data);
@@ -103,9 +105,11 @@ class AdsController extends Controller
             'status'            => 'required|boolean',
             'placements'        => 'nullable|array',
             'placements.*'      => 'nullable|array',
-            'placements.*.*'    => 'integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
+            'placements.*.*'    => 'nullable|array',
+            'placements.*.*.*'  => 'integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
+            'placement_global'  => 'nullable|array',
         ], [
-            'placements.*.*.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
+            'placements.*.*.*.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
         ]);
 
         if ($request->hasFile('media_file')) {
@@ -125,7 +129,7 @@ class AdsController extends Controller
             unset($data['media_url']);
         }
 
-        unset($data['media_file'], $data['placements']);
+        unset($data['media_file'], $data['placements'], $data['placement_global']);
         $data['status'] = $request->boolean('status');
 
         $ad->update($data);
@@ -168,29 +172,39 @@ class AdsController extends Controller
         $placements = [];
         $now = now();
 
-        foreach ($request->input('placements', []) as $ceritaId => $chapters) {
+        $globalFlags = $request->input('placement_global', []);
+
+        foreach ($request->input('placements', []) as $ceritaId => $positions) {
             $cerita = $ceritas->get((int) $ceritaId);
 
-            if (!$cerita || !is_array($chapters)) {
+            if (!$cerita || !is_array($positions)) {
                 continue;
             }
 
             $chapterTotal = max((int) $cerita->parts, count($cerita->isi_cerita ?? []));
 
-            foreach (array_unique($chapters) as $chapter) {
-                $chapterNumber = (int) $chapter;
-
-                if ($chapterNumber < 1 || $chapterNumber > $chapterTotal) {
+            foreach ($positions as $position => $chapters) {
+                if (!in_array($position, ['before', 'after'], true) || !is_array($chapters)) {
                     continue;
                 }
 
-                $placements[] = [
-                    'cerita_id'     => $cerita->id,
-                    'ad_id'         => $ad->id,
-                    'after_chapter' => $chapterNumber,
-                    'created_at'    => $now,
-                    'updated_at'    => $now,
-                ];
+                foreach (array_unique($chapters) as $chapter) {
+                    $chapterNumber = (int) $chapter;
+
+                    if ($chapterNumber < 1 || $chapterNumber > $chapterTotal) {
+                        continue;
+                    }
+
+                    $placements[] = [
+                        'cerita_id'           => $cerita->id,
+                        'ad_id'               => $ad->id,
+                        'after_chapter'       => $chapterNumber,
+                        'placement_position'  => $position,
+                        'is_global'           => isset($globalFlags[$cerita->id][$position][$chapterNumber]),
+                        'created_at'          => $now,
+                        'updated_at'          => $now,
+                    ];
+                }
             }
         }
 
