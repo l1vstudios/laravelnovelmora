@@ -41,6 +41,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role.permission')->group(function () {
 
         // Manajemen Konten
+        Route::put('cerita/global-lock', [CeritaController::class, 'globalLock'])
+            ->name('cerita.global-lock');
+
         Route::resource('cerita', CeritaController::class)
             ->parameters(['cerita' => 'cerita']);
 

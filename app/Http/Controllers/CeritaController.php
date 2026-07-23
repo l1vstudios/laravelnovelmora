@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 class CeritaController extends Controller
 {
+    private const MAX_UNSIGNED_INTEGER = 4294967295;
+
     public function index(Request $request)
     {
         $query = Cerita::with('kategori')->latest();
@@ -23,7 +25,9 @@ class CeritaController extends Controller
         }
 
         $ceritas = $query->paginate(10)->withQueryString();
-        return view('content.cerita.index', compact('ceritas'));
+        $lockCeritas = Cerita::orderBy('judul')->get(['id', 'judul', 'parts', 'isi_cerita']);
+
+        return view('content.cerita.index', compact('ceritas', 'lockCeritas'));
     }
     public function create()
     {
@@ -154,6 +158,70 @@ class CeritaController extends Controller
         }
         $cerita->delete();
         return redirect()->route('cerita.index')->with('success', 'Cerita berhasil dihapus.');
+    }
+
+    public function globalLock(Request $request)
+    {
+        $data = $request->validate([
+            'lock_scope'      => 'required|in:all,selected',
+            'cerita_ids'      => 'required_if:lock_scope,selected|array',
+            'cerita_ids.*'    => 'integer|exists:mst_cerita,id',
+            'chapter_start'   => 'required|integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
+            'chapter_end'     => 'required|integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
+        ], [
+            'cerita_ids.required_if' => 'Pilih minimal satu judul atau aktifkan pilih semua judul.',
+            'chapter_start.max'      => 'Maaf, angka chapter awal terlalu besar.',
+            'chapter_end.max'        => 'Maaf, angka chapter akhir terlalu besar.',
+        ]);
+
+        $start = min((int) $data['chapter_start'], (int) $data['chapter_end']);
+        $end = max((int) $data['chapter_start'], (int) $data['chapter_end']);
+
+        $query = Cerita::query();
+
+        if ($data['lock_scope'] === 'selected') {
+            $query->whereIn('id', $data['cerita_ids']);
+        }
+
+        $updatedStories = 0;
+        $updatedChapters = 0;
+
+        $query->chunkById(100, function ($ceritas) use ($start, $end, &$updatedStories, &$updatedChapters) {
+            foreach ($ceritas as $cerita) {
+                $chapterTotal = max((int) $cerita->parts, count($cerita->isi_cerita ?? []));
+
+                if ($chapterTotal < 1) {
+                    continue;
+                }
+
+                $lock = $cerita->lock ?? [];
+                $storyChanged = false;
+
+                for ($chapter = $start; $chapter <= min($end, $chapterTotal); $chapter++) {
+                    $key = 'chapter ' . $chapter;
+
+                    if (($lock[$key] ?? false) === true) {
+                        continue;
+                    }
+
+                    $lock[$key] = true;
+                    $storyChanged = true;
+                    $updatedChapters++;
+                }
+
+                if (!$storyChanged) {
+                    continue;
+                }
+
+                $cerita->lock = $lock;
+                $cerita->save();
+                $updatedStories++;
+            }
+        });
+
+        return redirect()
+            ->route('cerita.index')
+            ->with('success', "Locked global berhasil diterapkan ke {$updatedStories} cerita ({$updatedChapters} chapter).");
     }
 
     private function syncAdPlacements(Cerita $cerita, Request $request, int $chapterTotal): void

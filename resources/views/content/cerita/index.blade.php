@@ -1,6 +1,33 @@
 @extends('layouts/contentNavbarLayout')
 @section('title', 'Daftar Cerita')
 
+@section('page-script')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const scopeAll = document.getElementById('global-lock-all');
+    const storySelect = document.getElementById('global-lock-stories');
+
+    if (!scopeAll || !storySelect) {
+        return;
+    }
+
+    function syncGlobalLockStories() {
+        storySelect.disabled = scopeAll.checked;
+        storySelect.required = !scopeAll.checked;
+
+        if (scopeAll.checked) {
+            Array.from(storySelect.options).forEach((option) => {
+                option.selected = false;
+            });
+        }
+    }
+
+    scopeAll.addEventListener('change', syncGlobalLockStories);
+    syncGlobalLockStories();
+});
+</script>
+@endsection
+
 @section('content')
 <div class="row">
     <div class="col-12">
@@ -11,6 +38,75 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         @endif
+
+        @if($errors->any())
+        <div class="alert alert-danger alert-dismissible mb-6" role="alert">
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        @endif
+
+        <div class="card mb-6">
+            <div class="card-header">
+                <h5 class="mb-0">Set Locked Global</h5>
+            </div>
+            <div class="card-body">
+                @if($lockCeritas->isEmpty())
+                    <div class="alert alert-info mb-0">Belum ada cerita untuk di-lock.</div>
+                @else
+                    <form method="POST" action="{{ route('cerita.global-lock') }}" class="row g-4 align-items-end">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="lock_scope" value="selected">
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="lock_scope" value="all"
+                                    id="global-lock-all" {{ old('lock_scope') === 'all' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="global-lock-all">Pilih semua judul</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="global-lock-stories" class="form-label">Judul Novel</label>
+                            <select id="global-lock-stories" name="cerita_ids[]" class="form-select" multiple size="6">
+                                @foreach($lockCeritas as $lockCerita)
+                                    @php
+                                        $chapterTotal = max((int) $lockCerita->parts, count($lockCerita->isi_cerita ?? []));
+                                    @endphp
+                                    <option value="{{ $lockCerita->id }}" {{ collect(old('cerita_ids', []))->contains($lockCerita->id) ? 'selected' : '' }}>
+                                        {{ $lockCerita->judul }} ({{ $chapterTotal }} chapter)
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Tahan Ctrl atau Cmd untuk memilih lebih dari satu judul.</small>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label for="global-lock-start" class="form-label">Chapter Awal</label>
+                            <input type="number" min="1" name="chapter_start" id="global-lock-start"
+                                class="form-control" value="{{ old('chapter_start', 1) }}" required>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label for="global-lock-end" class="form-label">Chapter Akhir</label>
+                            <input type="number" min="1" name="chapter_end" id="global-lock-end"
+                                class="form-control" value="{{ old('chapter_end', 5) }}" required>
+                        </div>
+
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="icon-base bx bx-lock me-1"></i> Lock
+                            </button>
+                        </div>
+                    </form>
+                @endif
+            </div>
+        </div>
 
         <div class="card">
             <div class="card-header d-flex align-items-center justify-content-between">
