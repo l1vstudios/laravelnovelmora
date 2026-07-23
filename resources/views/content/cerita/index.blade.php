@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         @endif
-
+{{-- // --}}
         <div class="card mb-6">
             <div class="card-header">
                 <h5 class="mb-0">Set Locked Global</h5>
