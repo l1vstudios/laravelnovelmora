@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <i class="icon-base bx bx-lock me-1"></i> Set Lock Global
                     </button>
                     <a href="{{ route('cerita.create') }}" class="btn btn-primary">
-                        <i class="icon-base bx bx-plus me-1"></i> Tambah Cerita
+                        <i class="icon-base bx bx-plus me-1"></i> Tambah Ceritsa
                     </a>
                 </div>
             </div>
