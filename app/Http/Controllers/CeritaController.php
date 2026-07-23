@@ -164,6 +164,7 @@ class CeritaController extends Controller
     {
         $data = $request->validate([
             'lock_scope'      => 'required|in:all,selected',
+            'lock_action'     => 'required|in:lock,unlock',
             'cerita_ids'      => 'required_if:lock_scope,selected|array',
             'cerita_ids.*'    => 'integer|exists:mst_cerita,id',
             'chapter_start'   => 'required|integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
@@ -176,6 +177,7 @@ class CeritaController extends Controller
 
         $start = min((int) $data['chapter_start'], (int) $data['chapter_end']);
         $end = max((int) $data['chapter_start'], (int) $data['chapter_end']);
+        $targetLockState = $data['lock_action'] === 'lock';
 
         $query = Cerita::query();
 
@@ -186,7 +188,7 @@ class CeritaController extends Controller
         $updatedStories = 0;
         $updatedChapters = 0;
 
-        $query->chunkById(100, function ($ceritas) use ($start, $end, &$updatedStories, &$updatedChapters) {
+        $query->chunkById(100, function ($ceritas) use ($start, $end, $targetLockState, &$updatedStories, &$updatedChapters) {
             foreach ($ceritas as $cerita) {
                 $chapterTotal = max((int) $cerita->parts, count($cerita->isi_cerita ?? []));
 
@@ -200,11 +202,11 @@ class CeritaController extends Controller
                 for ($chapter = $start; $chapter <= min($end, $chapterTotal); $chapter++) {
                     $key = 'chapter ' . $chapter;
 
-                    if (($lock[$key] ?? false) === true) {
+                    if (($lock[$key] ?? false) === $targetLockState) {
                         continue;
                     }
 
-                    $lock[$key] = true;
+                    $lock[$key] = $targetLockState;
                     $storyChanged = true;
                     $updatedChapters++;
                 }
@@ -219,9 +221,11 @@ class CeritaController extends Controller
             }
         });
 
+        $actionLabel = $targetLockState ? 'Locked' : 'Unlocked';
+
         return redirect()
             ->route('cerita.index')
-            ->with('success', "Locked global berhasil diterapkan ke {$updatedStories} cerita ({$updatedChapters} chapter).");
+            ->with('success', "{$actionLabel} global berhasil diterapkan ke {$updatedStories} cerita ({$updatedChapters} chapter).");
     }
 
     private function syncAdPlacements(Cerita $cerita, Request $request, int $chapterTotal): void

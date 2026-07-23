@@ -6,6 +6,9 @@
 document.addEventListener('DOMContentLoaded', function () {
     const scopeAll = document.getElementById('global-lock-all');
     const storySelect = document.getElementById('global-lock-stories');
+    const storySearch = document.getElementById('global-lock-story-search');
+    const actionInputs = document.querySelectorAll('input[name="lock_action"]');
+    const submitButton = document.getElementById('global-lock-submit');
     const globalLockModal = document.getElementById('global-lock-modal');
     const hasGlobalLockErrors = @json($errors->any());
 
@@ -15,17 +18,54 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function syncGlobalLockStories() {
         storySelect.disabled = scopeAll.checked;
+        if (storySearch) {
+            storySearch.disabled = scopeAll.checked;
+            storySearch.value = scopeAll.checked ? '' : storySearch.value;
+        }
         storySelect.required = !scopeAll.checked;
 
         if (scopeAll.checked) {
             Array.from(storySelect.options).forEach((option) => {
                 option.selected = false;
+                option.hidden = false;
             });
         }
     }
 
+    function filterStories() {
+        if (!storySearch || scopeAll.checked) {
+            return;
+        }
+
+        const needle = storySearch.value.trim().toLowerCase();
+
+        Array.from(storySelect.options).forEach((option) => {
+            option.hidden = needle && !option.textContent.toLowerCase().includes(needle);
+        });
+    }
+
+    function syncActionButton() {
+        const selectedAction = document.querySelector('input[name="lock_action"]:checked')?.value || 'lock';
+
+        if (!submitButton) {
+            return;
+        }
+
+        submitButton.innerHTML = selectedAction === 'unlock'
+            ? '<i class="icon-base bx bx-lock-open me-1"></i> Unlock'
+            : '<i class="icon-base bx bx-lock me-1"></i> Lock';
+        submitButton.classList.toggle('btn-warning', selectedAction === 'unlock');
+        submitButton.classList.toggle('btn-primary', selectedAction !== 'unlock');
+    }
+
     scopeAll.addEventListener('change', syncGlobalLockStories);
+    if (storySearch) {
+        storySearch.addEventListener('input', filterStories);
+    }
+    actionInputs.forEach((input) => input.addEventListener('change', syncActionButton));
     syncGlobalLockStories();
+    filterStories();
+    syncActionButton();
 
     if (hasGlobalLockErrors && globalLockModal && window.bootstrap) {
         window.bootstrap.Modal.getOrCreateInstance(globalLockModal).show();
@@ -63,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <i class="icon-base bx bx-lock me-1"></i> Set Lock Global
                     </button>
                     <a href="{{ route('cerita.create') }}" class="btn btn-primary">
-                        <i class="icon-base bx bx-plus me-1"></i> Tambah Ceritsa
+                        <i class="icon-base bx bx-plus me-1"></i> Tambah Cerita
                     </a>
                 </div>
             </div>
@@ -219,6 +259,23 @@ document.addEventListener('DOMContentLoaded', function () {
                         <input type="hidden" name="lock_scope" value="selected">
 
                         <div class="col-12">
+                            <label class="form-label d-block">Aksi</label>
+                            <div class="btn-group" role="group" aria-label="Aksi lock chapter">
+                                <input type="radio" class="btn-check" name="lock_action" id="global-lock-action-lock"
+                                    value="lock" {{ old('lock_action', 'lock') === 'lock' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-primary" for="global-lock-action-lock">
+                                    <i class="icon-base bx bx-lock me-1"></i> Lock
+                                </label>
+
+                                <input type="radio" class="btn-check" name="lock_action" id="global-lock-action-unlock"
+                                    value="unlock" {{ old('lock_action') === 'unlock' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-warning" for="global-lock-action-unlock">
+                                    <i class="icon-base bx bx-lock-open me-1"></i> Unlock
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" name="lock_scope" value="all"
                                     id="global-lock-all" {{ old('lock_scope') === 'all' ? 'checked' : '' }}>
@@ -228,6 +285,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         <div class="col-12">
                             <label for="global-lock-stories" class="form-label">Judul Novel</label>
+                            <input type="text" id="global-lock-story-search" class="form-control mb-2"
+                                placeholder="Cari judul novel..." autocomplete="off">
                             <select id="global-lock-stories" name="cerita_ids[]" class="form-select" multiple size="7">
                                 @foreach($lockCeritas as $lockCerita)
                                     @php
@@ -254,12 +313,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </form>
                 @endif
-                {{-- //ucok --}}
             </div>
             @if($lockCeritas->isNotEmpty())
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" form="global-lock-form" class="btn btn-primary">
+                    <button type="submit" form="global-lock-form" id="global-lock-submit" class="btn btn-primary">
                         <i class="icon-base bx bx-lock me-1"></i> Lock
                     </button>
                 </div>
