@@ -6,6 +6,8 @@
 document.addEventListener('DOMContentLoaded', function () {
     const scopeAll = document.getElementById('global-lock-all');
     const storySelect = document.getElementById('global-lock-stories');
+    const globalLockModal = document.getElementById('global-lock-modal');
+    const hasGlobalLockErrors = @json($errors->any());
 
     if (!scopeAll || !storySelect) {
         return;
@@ -24,6 +26,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     scopeAll.addEventListener('change', syncGlobalLockStories);
     syncGlobalLockStories();
+
+    if (hasGlobalLockErrors && globalLockModal && window.bootstrap) {
+        window.bootstrap.Modal.getOrCreateInstance(globalLockModal).show();
+    }
 });
 </script>
 @endsection
@@ -49,71 +55,17 @@ document.addEventListener('DOMContentLoaded', function () {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         @endif
-{{-- // --}}
-        <div class="card mb-6">
-            <div class="card-header">
-                <h5 class="mb-0">Set Locked Global</h5>
-            </div>
-            <div class="card-body">
-                @if($lockCeritas->isEmpty())
-                    <div class="alert alert-info mb-0">Belum ada cerita untuk di-lock.</div>
-                @else
-                    <form method="POST" action="{{ route('cerita.global-lock') }}" class="row g-4 align-items-end">
-                        @csrf
-                        @method('PUT')
-                        <input type="hidden" name="lock_scope" value="selected">
-
-                        <div class="col-12">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="lock_scope" value="all"
-                                    id="global-lock-all" {{ old('lock_scope') === 'all' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="global-lock-all">Pilih semua judul</label>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label for="global-lock-stories" class="form-label">Judul Novel</label>
-                            <select id="global-lock-stories" name="cerita_ids[]" class="form-select" multiple size="6">
-                                @foreach($lockCeritas as $lockCerita)
-                                    @php
-                                        $chapterTotal = max((int) $lockCerita->parts, count($lockCerita->isi_cerita ?? []));
-                                    @endphp
-                                    <option value="{{ $lockCerita->id }}" {{ collect(old('cerita_ids', []))->contains($lockCerita->id) ? 'selected' : '' }}>
-                                        {{ $lockCerita->judul }} ({{ $chapterTotal }} chapter)
-                                    </option>
-                                @endforeach
-                            </select>
-                            <small class="text-muted">Tahan Ctrl atau Cmd untuk memilih lebih dari satu judul.</small>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label for="global-lock-start" class="form-label">Chapter Awal</label>
-                            <input type="number" min="1" name="chapter_start" id="global-lock-start"
-                                class="form-control" value="{{ old('chapter_start', 1) }}" required>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label for="global-lock-end" class="form-label">Chapter Akhir</label>
-                            <input type="number" min="1" name="chapter_end" id="global-lock-end"
-                                class="form-control" value="{{ old('chapter_end', 5) }}" required>
-                        </div>
-
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="icon-base bx bx-lock me-1"></i> Lock
-                            </button>
-                        </div>
-                    </form>
-                @endif
-            </div>
-        </div>
-
         <div class="card">
-            <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <h5 class="mb-0">Daftar Cerita</h5>
-                <a href="{{ route('cerita.create') }}" class="btn btn-primary">
-                    <i class="icon-base bx bx-plus me-1"></i> Tambah Cerita
-                </a>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#global-lock-modal">
+                        <i class="icon-base bx bx-lock me-1"></i> Set Lock Global
+                    </button>
+                    <a href="{{ route('cerita.create') }}" class="btn btn-primary">
+                        <i class="icon-base bx bx-plus me-1"></i> Tambah Cerita
+                    </a>
+                </div>
             </div>
             <div class="card-body border-bottom pb-4 pt-3">
                 <form method="GET" action="{{ route('cerita.index') }}" class="row g-3 align-items-end">
@@ -247,6 +199,71 @@ document.addEventListener('DOMContentLoaded', function () {
             @endif
         </div>
 
+    </div>
+</div>
+
+<div class="modal fade" id="global-lock-modal" tabindex="-1" aria-labelledby="global-lock-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="global-lock-modal-title">Set Lock Global</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                @if($lockCeritas->isEmpty())
+                    <div class="alert alert-info mb-0">Belum ada cerita untuk di-lock.</div>
+                @else
+                    <form method="POST" action="{{ route('cerita.global-lock') }}" id="global-lock-form" class="row g-4">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="lock_scope" value="selected">
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="lock_scope" value="all"
+                                    id="global-lock-all" {{ old('lock_scope') === 'all' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="global-lock-all">Pilih semua judul</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="global-lock-stories" class="form-label">Judul Novel</label>
+                            <select id="global-lock-stories" name="cerita_ids[]" class="form-select" multiple size="7">
+                                @foreach($lockCeritas as $lockCerita)
+                                    @php
+                                        $chapterTotal = max((int) $lockCerita->parts, count($lockCerita->isi_cerita ?? []));
+                                    @endphp
+                                    <option value="{{ $lockCerita->id }}" {{ collect(old('cerita_ids', []))->contains($lockCerita->id) ? 'selected' : '' }}>
+                                        {{ $lockCerita->judul }} ({{ $chapterTotal }} chapter)
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Tahan Ctrl atau Cmd untuk memilih lebih dari satu judul.</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="global-lock-start" class="form-label">Chapter Awal</label>
+                            <input type="number" min="1" name="chapter_start" id="global-lock-start"
+                                class="form-control" value="{{ old('chapter_start', 1) }}" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="global-lock-end" class="form-label">Chapter Akhir</label>
+                            <input type="number" min="1" name="chapter_end" id="global-lock-end"
+                                class="form-control" value="{{ old('chapter_end', 5) }}" required>
+                        </div>
+                    </form>
+                @endif
+            </div>
+            @if($lockCeritas->isNotEmpty())
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" form="global-lock-form" class="btn btn-primary">
+                        <i class="icon-base bx bx-lock me-1"></i> Lock
+                    </button>
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 @endsection
