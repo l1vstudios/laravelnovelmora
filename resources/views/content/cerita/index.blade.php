@@ -254,6 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </form>
                 @endif
+                {{-- //ucok --}}
             </div>
             @if($lockCeritas->isNotEmpty())
                 <div class="modal-footer">
