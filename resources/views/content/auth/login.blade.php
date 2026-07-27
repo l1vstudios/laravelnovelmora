@@ -16,9 +16,7 @@
           {{-- Logo --}}
           <div class="app-brand justify-content-center mb-6">
             <a href="{{ url('/') }}" class="app-brand-link gap-2">
-              <span class="app-brand-text demo fw-bold fs-4">
-                BACAAN
-              </span>
+              <img src="{{ asset('assets/img/bacaanlogo2.png') }}" alt="Logo" style="width: 180px; height: auto;">
             </a>
           </div>
           {{-- /Logo --}}
