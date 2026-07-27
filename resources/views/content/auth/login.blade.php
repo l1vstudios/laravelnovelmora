@@ -3,6 +3,8 @@
 @section('title', 'Login - NovelMora')
 @section('pageTitle', 'BACAAN - Wadah Cerita Digital, Bikin Waktu Luangmu Jadi Lebih Berwarna')
 @section('meta_description', 'BACAAN adalah platform cerita digital terlengkap, menyajikan berbagai genre cerita yang menarik, berita seru, dan artikel inspiratif. Dari kisah romantis yang mendebarkan hingga misteri yang menegangkan hingga kisah pengembangan diri yang memotivasi—semuanya ada di sini untuk menemani Anda setiap hari!')
+@section('meta_keywords', 'BACAAN, cerita digital, novel online, cerita romantis, cerita misteri, artikel inspiratif, berita seru')
+@section('og_title', 'BACAAN - Wadah Cerita Digital, Bikin Waktu Luangmu Jadi Lebih Berwarna')
 @section('og_site_name', 'BACAAN')
 @section('robots', 'noindex, nofollow')
 
