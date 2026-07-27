@@ -10,36 +10,45 @@ document.addEventListener('DOMContentLoaded', function () {
     const actionInputs = document.querySelectorAll('input[name="lock_action"]');
     const submitButton = document.getElementById('global-lock-submit');
     const globalLockModal = document.getElementById('global-lock-modal');
-    const hasGlobalLockErrors = @json($errors->any());
+    const bulkScopeAll = document.getElementById('bulk-pilihan-all');
+    const bulkStorySelect = document.getElementById('bulk-pilihan-stories');
+    const bulkStorySearch = document.getElementById('bulk-pilihan-story-search');
+    const bulkFieldInputs = document.querySelectorAll('input[name="bulk_field"]');
+    const bulkActionInputs = document.querySelectorAll('input[name="bulk_action"]');
+    const bulkSubmitButton = document.getElementById('bulk-pilihan-submit');
+    const bulkPilihanModal = document.getElementById('bulk-pilihan-modal');
+    const hasErrors = @json($errors->any());
+    const oldFormType = @json(old('form_type'));
 
-    if (!scopeAll || !storySelect) {
-        return;
-    }
-
-    function syncGlobalLockStories() {
-        storySelect.disabled = scopeAll.checked;
-        if (storySearch) {
-            storySearch.disabled = scopeAll.checked;
-            storySearch.value = scopeAll.checked ? '' : storySearch.value;
+    function syncStoryPicker(scopeAllInput, selectInput, searchInput) {
+        if (!scopeAllInput || !selectInput) {
+            return;
         }
-        storySelect.required = !scopeAll.checked;
 
-        if (scopeAll.checked) {
-            Array.from(storySelect.options).forEach((option) => {
+        selectInput.disabled = scopeAllInput.checked;
+        selectInput.required = !scopeAllInput.checked;
+
+        if (searchInput) {
+            searchInput.disabled = scopeAllInput.checked;
+            searchInput.value = scopeAllInput.checked ? '' : searchInput.value;
+        }
+
+        if (scopeAllInput.checked) {
+            Array.from(selectInput.options).forEach((option) => {
                 option.selected = false;
                 option.hidden = false;
             });
         }
     }
 
-    function filterStories() {
-        if (!storySearch || scopeAll.checked) {
+    function filterStoryPicker(scopeAllInput, selectInput, searchInput) {
+        if (!scopeAllInput || !selectInput || !searchInput || scopeAllInput.checked) {
             return;
         }
 
-        const needle = storySearch.value.trim().toLowerCase();
+        const needle = searchInput.value.trim().toLowerCase();
 
-        Array.from(storySelect.options).forEach((option) => {
+        Array.from(selectInput.options).forEach((option) => {
             option.hidden = needle && !option.textContent.toLowerCase().includes(needle);
         });
     }
@@ -58,17 +67,53 @@ document.addEventListener('DOMContentLoaded', function () {
         submitButton.classList.toggle('btn-primary', selectedAction !== 'unlock');
     }
 
-    scopeAll.addEventListener('change', syncGlobalLockStories);
-    if (storySearch) {
-        storySearch.addEventListener('input', filterStories);
-    }
-    actionInputs.forEach((input) => input.addEventListener('change', syncActionButton));
-    syncGlobalLockStories();
-    filterStories();
-    syncActionButton();
+    function syncBulkButton() {
+        const selectedField = document.querySelector('input[name="bulk_field"]:checked')?.value || 'recomendation';
+        const selectedAction = document.querySelector('input[name="bulk_action"]:checked')?.value || 'enable';
 
-    if (hasGlobalLockErrors && globalLockModal && window.bootstrap) {
+        if (!bulkSubmitButton) {
+            return;
+        }
+
+        const fieldLabel = selectedField === 'wajib_dibaca' ? 'Wajib Dibaca' : 'Rekomendasi';
+        const actionLabel = selectedAction === 'disable' ? 'Nonaktifkan' : 'Aktifkan';
+
+        bulkSubmitButton.innerHTML = selectedAction === 'disable'
+            ? `<i class="icon-base bx bx-x-circle me-1"></i> ${actionLabel} ${fieldLabel}`
+            : `<i class="icon-base bx bx-check-circle me-1"></i> ${actionLabel} ${fieldLabel}`;
+        bulkSubmitButton.classList.toggle('btn-warning', selectedAction === 'disable');
+        bulkSubmitButton.classList.toggle('btn-primary', selectedAction !== 'disable');
+    }
+
+    if (scopeAll && storySelect) {
+        scopeAll.addEventListener('change', () => syncStoryPicker(scopeAll, storySelect, storySearch));
+        if (storySearch) {
+            storySearch.addEventListener('input', () => filterStoryPicker(scopeAll, storySelect, storySearch));
+        }
+        actionInputs.forEach((input) => input.addEventListener('change', syncActionButton));
+        syncStoryPicker(scopeAll, storySelect, storySearch);
+        filterStoryPicker(scopeAll, storySelect, storySearch);
+        syncActionButton();
+    }
+
+    if (bulkScopeAll && bulkStorySelect) {
+        bulkScopeAll.addEventListener('change', () => syncStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch));
+        if (bulkStorySearch) {
+            bulkStorySearch.addEventListener('input', () => filterStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch));
+        }
+        bulkFieldInputs.forEach((input) => input.addEventListener('change', syncBulkButton));
+        bulkActionInputs.forEach((input) => input.addEventListener('change', syncBulkButton));
+        syncStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch);
+        filterStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch);
+        syncBulkButton();
+    }
+
+    if (hasErrors && oldFormType === 'global-lock' && globalLockModal && window.bootstrap) {
         window.bootstrap.Modal.getOrCreateInstance(globalLockModal).show();
+    }
+
+    if (hasErrors && oldFormType === 'bulk-pilihan' && bulkPilihanModal && window.bootstrap) {
+        window.bootstrap.Modal.getOrCreateInstance(bulkPilihanModal).show();
     }
 });
 </script>
@@ -99,6 +144,9 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <h5 class="mb-0">Daftar Cerita</h5>
                 <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#bulk-pilihan-modal">
+                        <i class="icon-base bx bx-check-square me-1"></i> Set Pilihan Cerita
+                    </button>
                     <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#global-lock-modal">
                         <i class="icon-base bx bx-lock me-1"></i> Set Lock Global
                     </button>
@@ -133,9 +181,14 @@ document.addEventListener('DOMContentLoaded', function () {
                             <option value="0" {{ request('wajib_dibaca') === '0' ? 'selected' : '' }}>Tidak</option>
                         </select>
                     </div>
+                    <div class="col-auto">
+                        <label class="form-label mb-1 text-muted" style="font-size:.75rem;">Judul Cerita</label>
+                        <input type="search" name="judul" class="form-control form-control-sm"
+                            value="{{ request('judul') }}" placeholder="Cari judul..." style="min-width:220px;">
+                    </div>
                     <div class="col-auto d-flex gap-2">
                         <button type="submit" class="btn btn-sm btn-primary"><i class="icon-base bx bx-filter me-1"></i> Filter</button>
-                        @if(request()->hasAny(['status','recomendation','wajib_dibaca']))
+                        @if(request()->hasAny(['status','recomendation','wajib_dibaca','judul']))
                         <a href="{{ route('cerita.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
                         @endif
                     </div>
@@ -256,6 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <form method="POST" action="{{ route('cerita.global-lock') }}" id="global-lock-form" class="row g-4">
                         @csrf
                         @method('PUT')
+                        <input type="hidden" name="form_type" value="global-lock">
                         <input type="hidden" name="lock_scope" value="selected">
 
                         <div class="col-12">
@@ -319,6 +373,93 @@ document.addEventListener('DOMContentLoaded', function () {
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" form="global-lock-form" id="global-lock-submit" class="btn btn-primary">
                         <i class="icon-base bx bx-lock me-1"></i> Lock
+                    </button>
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="bulk-pilihan-modal" tabindex="-1" aria-labelledby="bulk-pilihan-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulk-pilihan-modal-title">Set Rekomendasi / Wajib Dibaca</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                @if($bulkCeritas->isEmpty())
+                    <div class="alert alert-info mb-0">Belum ada cerita untuk dipilih.</div>
+                @else
+                    <form method="POST" action="{{ route('cerita.bulk-pilihan') }}" id="bulk-pilihan-form" class="row g-4">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="form_type" value="bulk-pilihan">
+                        <input type="hidden" name="bulk_scope" value="selected">
+
+                        <div class="col-md-6">
+                            <label class="form-label d-block">Field</label>
+                            <div class="btn-group" role="group" aria-label="Pilihan field cerita">
+                                <input type="radio" class="btn-check" name="bulk_field" id="bulk-field-recomendation"
+                                    value="recomendation" {{ old('bulk_field', 'recomendation') === 'recomendation' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-primary" for="bulk-field-recomendation">
+                                    <i class="icon-base bx bx-star me-1"></i> Rekomendasi
+                                </label>
+
+                                <input type="radio" class="btn-check" name="bulk_field" id="bulk-field-wajib"
+                                    value="wajib_dibaca" {{ old('bulk_field') === 'wajib_dibaca' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-primary" for="bulk-field-wajib">
+                                    <i class="icon-base bx bx-bookmark me-1"></i> Wajib Dibaca
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label d-block">Aksi</label>
+                            <div class="btn-group" role="group" aria-label="Aksi pilihan cerita">
+                                <input type="radio" class="btn-check" name="bulk_action" id="bulk-action-enable"
+                                    value="enable" {{ old('bulk_action', 'enable') === 'enable' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-success" for="bulk-action-enable">
+                                    <i class="icon-base bx bx-check-circle me-1"></i> Aktifkan
+                                </label>
+
+                                <input type="radio" class="btn-check" name="bulk_action" id="bulk-action-disable"
+                                    value="disable" {{ old('bulk_action') === 'disable' ? 'checked' : '' }}>
+                                <label class="btn btn-outline-warning" for="bulk-action-disable">
+                                    <i class="icon-base bx bx-x-circle me-1"></i> Nonaktifkan
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="bulk_scope" value="all"
+                                    id="bulk-pilihan-all" {{ old('bulk_scope') === 'all' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="bulk-pilihan-all">Pilih semua judul</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="bulk-pilihan-stories" class="form-label">Judul Cerita</label>
+                            <input type="text" id="bulk-pilihan-story-search" class="form-control mb-2"
+                                placeholder="Cari judul cerita..." autocomplete="off">
+                            <select id="bulk-pilihan-stories" name="cerita_ids[]" class="form-select" multiple size="8">
+                                @foreach($bulkCeritas as $bulkCerita)
+                                    <option value="{{ $bulkCerita->id }}" {{ collect(old('cerita_ids', []))->contains($bulkCerita->id) ? 'selected' : '' }}>
+                                        {{ $bulkCerita->judul }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Tahan Ctrl atau Cmd untuk memilih lebih dari satu judul.</small>
+                        </div>
+                    </form>
+                @endif
+            </div>
+            @if($bulkCeritas->isNotEmpty())
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" form="bulk-pilihan-form" id="bulk-pilihan-submit" class="btn btn-primary">
+                        <i class="icon-base bx bx-check-circle me-1"></i> Aktifkan Rekomendasi
                     </button>
                 </div>
             @endif

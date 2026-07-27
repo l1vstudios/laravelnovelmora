@@ -14,13 +14,28 @@
             </div>
             <div class="table-responsive text-nowrap">
                 <table class="table table-hover">
-                    <thead><tr><th>#</th><th>Preview</th><th>URL Gambar</th><th>Status</th><th>Dibuat</th><th>Aksi</th></tr></thead>
+                    <thead><tr><th>#</th><th>Preview</th><th>URL Gambar</th><th>Link Judul</th><th>Status</th><th>Dibuat</th><th>Aksi</th></tr></thead>
                     <tbody class="table-border-bottom-0">
                         @forelse($sliders as $slider)
                         <tr>
                             <td>{{ $loop->iteration + ($sliders->currentPage() - 1) * $sliders->perPage() }}</td>
-                            <td><img src="{{ $slider->image_url }}" alt="Slider" class="rounded" style="width:80px;height:50px;object-fit:cover;" onerror="this.src='https://placehold.co/80x50'"></td>
+                            <td>
+                                @if($slider->cerita)
+                                    <a href="{{ route('cerita.show', $slider->cerita) }}" title="Buka {{ $slider->cerita->judul }}">
+                                        <img src="{{ $slider->image_url }}" alt="Slider" class="rounded" style="width:80px;height:50px;object-fit:cover;" onerror="this.src='https://placehold.co/80x50'">
+                                    </a>
+                                @else
+                                    <img src="{{ $slider->image_url }}" alt="Slider" class="rounded" style="width:80px;height:50px;object-fit:cover;" onerror="this.src='https://placehold.co/80x50'">
+                                @endif
+                            </td>
                             <td><small class="text-muted">{{ Str::limit($slider->image_url, 50) }}</small></td>
+                            <td>
+                                @if($slider->cerita)
+                                    <a href="{{ route('cerita.show', $slider->cerita) }}" class="fw-medium">{{ Str::limit($slider->cerita->judul, 40) }}</a>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
                             <td>@if($slider->status)<span class="badge bg-label-success">Aktif</span>@else<span class="badge bg-label-secondary">Nonaktif</span>@endif</td>
                             <td>{{ $slider->created_at ? $slider->created_at->format('d M Y') : '-' }}</td>
                             <td>
@@ -38,7 +53,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="6" class="text-center py-6 text-muted">Belum ada slider. <a href="{{ route('slider.create') }}">Tambah sekarang</a>.</td></tr>
+                        <tr><td colspan="7" class="text-center py-6 text-muted">Belum ada slider. <a href="{{ route('slider.create') }}">Tambah sekarang</a>.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

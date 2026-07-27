@@ -27,6 +27,18 @@
                         <img id="img-preview" src="" alt="Preview" class="rounded img-fluid" style="max-height:200px;">
                     </div>
                     <div class="mb-5">
+                        <label class="form-label">Link ke Judul Cerita</label>
+                        <select name="cerita_id" class="form-select @error('cerita_id') is-invalid @enderror">
+                            <option value="">Tidak ada link</option>
+                            @foreach($ceritas as $cerita)
+                                <option value="{{ $cerita->id }}" {{ (string) old('cerita_id') === (string) $cerita->id ? 'selected' : '' }}>
+                                    {{ $cerita->judul }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('cerita_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="mb-5">
                         <div class="form-check form-switch">
                             <input type="hidden" name="status" value="0">
                             <input class="form-check-input" type="checkbox" name="status" id="status" value="1" {{ old('status', '1') ? 'checked' : '' }}>

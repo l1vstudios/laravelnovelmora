@@ -17,9 +17,23 @@
         </div>
         <div class="card mb-6">
             <div class="card-body text-center">
-                <img src="{{ $slider->image_url }}" alt="Slider" class="img-fluid rounded mb-4" style="max-height:300px;">
+                @if($slider->cerita)
+                    <a href="{{ route('cerita.show', $slider->cerita) }}" title="Buka {{ $slider->cerita->judul }}">
+                        <img src="{{ $slider->image_url }}" alt="Slider" class="img-fluid rounded mb-4" style="max-height:300px;">
+                    </a>
+                @else
+                    <img src="{{ $slider->image_url }}" alt="Slider" class="img-fluid rounded mb-4" style="max-height:300px;">
+                @endif
                 <div class="mb-2">
                     @if($slider->status)<span class="badge bg-label-success">Aktif</span>@else<span class="badge bg-label-secondary">Nonaktif</span>@endif
+                </div>
+                <div class="mb-2">
+                    @if($slider->cerita)
+                        <span class="text-muted">Link Judul:</span>
+                        <a href="{{ route('cerita.show', $slider->cerita) }}" class="fw-medium">{{ $slider->cerita->judul }}</a>
+                    @else
+                        <span class="text-muted">Link Judul: -</span>
+                    @endif
                 </div>
                 <small class="text-muted d-block">{{ $slider->image_url }}</small>
                 <small class="text-muted">Dibuat: {{ $slider->created_at ? $slider->created_at->format('d M Y') : '-' }}</small>

@@ -17,6 +17,10 @@ class CeritaController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status === '1');
         }
+        if ($request->filled('judul')) {
+            $judul = mb_strtolower(trim($request->judul));
+            $query->whereRaw('LOWER(judul) LIKE ?', ["%{$judul}%"]);
+        }
         if ($request->filled('recomendation')) {
             $query->where('recomendation', $request->recomendation === '1');
         }
@@ -26,8 +30,9 @@ class CeritaController extends Controller
 
         $ceritas = $query->paginate(10)->withQueryString();
         $lockCeritas = Cerita::orderBy('judul')->get(['id', 'judul', 'parts', 'isi_cerita']);
+        $bulkCeritas = Cerita::orderBy('judul')->get(['id', 'judul']);
 
-        return view('content.cerita.index', compact('ceritas', 'lockCeritas'));
+        return view('content.cerita.index', compact('ceritas', 'lockCeritas', 'bulkCeritas'));
     }
     public function create()
     {
@@ -164,6 +169,7 @@ class CeritaController extends Controller
     {
         $data = $request->validate([
             'lock_scope'      => 'required|in:all,selected',
+            'form_type'       => 'nullable|string',
             'lock_action'     => 'required|in:lock,unlock',
             'cerita_ids'      => 'required_if:lock_scope,selected|array',
             'cerita_ids.*'    => 'integer|exists:mst_cerita,id',
@@ -226,6 +232,37 @@ class CeritaController extends Controller
         return redirect()
             ->route('cerita.index')
             ->with('success', "{$actionLabel} global berhasil diterapkan ke {$updatedStories} cerita ({$updatedChapters} chapter).");
+    }
+
+    public function bulkPilihan(Request $request)
+    {
+        $data = $request->validate([
+            'form_type'      => 'nullable|string',
+            'bulk_scope'     => 'required|in:all,selected',
+            'bulk_field'     => 'required|in:recomendation,wajib_dibaca',
+            'bulk_action'    => 'required|in:enable,disable',
+            'cerita_ids'     => 'required_if:bulk_scope,selected|array',
+            'cerita_ids.*'   => 'integer|exists:mst_cerita,id',
+        ], [
+            'cerita_ids.required_if' => 'Pilih minimal satu judul atau aktifkan pilih semua judul.',
+        ]);
+
+        $query = Cerita::query();
+
+        if ($data['bulk_scope'] === 'selected') {
+            $query->whereIn('id', $data['cerita_ids']);
+        }
+
+        $updatedStories = $query->update([
+            $data['bulk_field'] => $data['bulk_action'] === 'enable',
+        ]);
+
+        $fieldLabel = $data['bulk_field'] === 'recomendation' ? 'Rekomendasi' : 'Wajib Dibaca';
+        $actionLabel = $data['bulk_action'] === 'enable' ? 'diaktifkan' : 'dinonaktifkan';
+
+        return redirect()
+            ->route('cerita.index')
+            ->with('success', "{$fieldLabel} berhasil {$actionLabel} untuk {$updatedStories} cerita.");
     }
 
     private function syncAdPlacements(Cerita $cerita, Request $request, int $chapterTotal): void
