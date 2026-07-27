@@ -5,7 +5,7 @@
 
 <div class="mb-5">
     <label class="form-label">Link ke Judul Cerita</label>
-    <div class="dropdown js-cerita-picker" data-search-url="{{ route('slider.cerita-options') }}">
+    <div class="dropdown js-cerita-picker" data-search-url="{{ route('slider.cerita-options', [], false) }}">
         <input type="hidden" name="cerita_id" value="{{ $selectedId }}">
         <button type="button" class="form-select text-start @error('cerita_id') is-invalid @enderror"
             data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
@@ -101,13 +101,20 @@ document.addEventListener('DOMContentLoaded', function () {
             renderMessage(keyword ? 'Mencari judul...' : 'Memuat judul...');
 
             fetch(url, {
+                credentials: 'same-origin',
                 headers: {
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 signal: activeRequest.signal
             })
-                .then(function (response) { return response.json(); })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    return response.json();
+                })
                 .then(function (payload) { renderOptions(payload.data || []); })
                 .catch(function (error) {
                     if (error.name === 'AbortError') {
