@@ -1,5 +1,9 @@
 @extends('layouts/contentNavbarLayout')
 @section('title', 'Dashboard')
+@section('pageTitle', 'BACAAN - Wadah Cerita Digital, Bikin Waktu Luangmu Jadi Lebih Berwarna')
+@section('meta_description', 'BACAAN adalah platform cerita digital terlengkap, menyajikan berbagai genre cerita yang menarik, berita seru, dan artikel inspiratif. Dari kisah romantis yang mendebarkan hingga misteri yang menegangkan hingga kisah pengembangan diri yang memotivasi—semuanya ada di sini untuk menemani Anda setiap hari!')
+@section('og_site_name', 'BACAAN')
+@section('robots', 'noindex, nofollow')
 @section('content')
   <div class="d-flex align-items-center justify-content-between mb-6">
     <div>
