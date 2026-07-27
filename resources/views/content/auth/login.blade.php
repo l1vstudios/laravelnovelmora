@@ -23,11 +23,11 @@
 
           {{-- <h4 class="mb-1 pt-2">
             Selamat Datang!
-          </h4>
+          </h4> --}}
 
           <p class="mb-6 text-muted">
             Masuk ke akun admin Anda untuk melanjutkan
-          </p> --}}
+          </p>
 
           {{-- Global Error --}}
           @if ($errors->any())
