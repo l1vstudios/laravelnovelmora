@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const bulkScopeAll = document.getElementById('bulk-pilihan-all');
     const bulkStorySelect = document.getElementById('bulk-pilihan-stories');
     const bulkStorySearch = document.getElementById('bulk-pilihan-story-search');
-    const bulkFieldInputs = document.querySelectorAll('input[name="bulk_field"]');
+    const bulkFieldInputs = document.querySelectorAll('input[name="bulk_fields[]"]');
     const bulkActionInputs = document.querySelectorAll('input[name="bulk_action"]');
     const bulkSubmitButton = document.getElementById('bulk-pilihan-submit');
     const bulkPilihanModal = document.getElementById('bulk-pilihan-modal');
@@ -68,14 +68,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function syncBulkButton() {
-        const selectedField = document.querySelector('input[name="bulk_field"]:checked')?.value || 'recomendation';
+        const selectedFields = Array.from(document.querySelectorAll('input[name="bulk_fields[]"]:checked'))
+            .map((input) => input.value);
         const selectedAction = document.querySelector('input[name="bulk_action"]:checked')?.value || 'enable';
 
         if (!bulkSubmitButton) {
             return;
         }
 
-        const fieldLabel = selectedField === 'wajib_dibaca' ? 'Wajib Dibaca' : 'Rekomendasi';
+        const fieldLabel = selectedFields.length === 2
+            ? 'Rekomendasi & Wajib Dibaca'
+            : (selectedFields[0] === 'wajib_dibaca' ? 'Wajib Dibaca' : 'Rekomendasi');
         const actionLabel = selectedAction === 'disable' ? 'Nonaktifkan' : 'Aktifkan';
 
         bulkSubmitButton.innerHTML = selectedAction === 'disable'
@@ -145,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <h5 class="mb-0">Daftar Cerita</h5>
                 <div class="d-flex gap-2 flex-wrap">
                     <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#bulk-pilihan-modal">
-                        <i class="icon-base bx bx-check-square me-1"></i> Set Pilihan Cerita
+                        <i class="icon-base bx bx-check-square me-1"></i> Set Flag Cerita
                     </button>
                     <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#global-lock-modal">
                         <i class="icon-base bx bx-lock me-1"></i> Set Lock Global
@@ -384,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="bulk-pilihan-modal-title">Set Rekomendasi / Wajib Dibaca</h5>
+                <h5 class="modal-title" id="bulk-pilihan-modal-title">Set Flag Cerita</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
@@ -400,14 +403,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="col-md-6">
                             <label class="form-label d-block">Field</label>
                             <div class="btn-group" role="group" aria-label="Pilihan field cerita">
-                                <input type="radio" class="btn-check" name="bulk_field" id="bulk-field-recomendation"
-                                    value="recomendation" {{ old('bulk_field', 'recomendation') === 'recomendation' ? 'checked' : '' }}>
+                                <input type="checkbox" class="btn-check" name="bulk_fields[]" id="bulk-field-recomendation"
+                                    value="recomendation" {{ collect(old('bulk_fields', ['recomendation']))->contains('recomendation') ? 'checked' : '' }}>
                                 <label class="btn btn-outline-primary" for="bulk-field-recomendation">
                                     <i class="icon-base bx bx-star me-1"></i> Rekomendasi
                                 </label>
 
-                                <input type="radio" class="btn-check" name="bulk_field" id="bulk-field-wajib"
-                                    value="wajib_dibaca" {{ old('bulk_field') === 'wajib_dibaca' ? 'checked' : '' }}>
+                                <input type="checkbox" class="btn-check" name="bulk_fields[]" id="bulk-field-wajib"
+                                    value="wajib_dibaca" {{ collect(old('bulk_fields', []))->contains('wajib_dibaca') ? 'checked' : '' }}>
                                 <label class="btn btn-outline-primary" for="bulk-field-wajib">
                                     <i class="icon-base bx bx-bookmark me-1"></i> Wajib Dibaca
                                 </label>

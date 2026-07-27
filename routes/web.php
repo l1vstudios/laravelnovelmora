@@ -52,6 +52,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('kategori', KategoriController::class)
             ->parameters(['kategori' => 'kategori']);
 
+        Route::get('slider/cerita-options', [SliderController::class, 'ceritaOptions'])
+            ->name('slider.cerita-options');
         Route::resource('slider', SliderController::class)
             ->parameters(['slider' => 'slider']);
 

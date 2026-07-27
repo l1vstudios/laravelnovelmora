@@ -25,18 +25,7 @@
                         <label class="form-label">Preview</label><br>
                         <img id="img-preview" src="{{ old('image_url', $slider->image_url) }}" alt="Preview" class="rounded" style="max-height:200px;" onerror="this.style.display='none'">
                     </div>
-                    <div class="mb-5">
-                        <label class="form-label">Link ke Judul Cerita</label>
-                        <select name="cerita_id" class="form-select @error('cerita_id') is-invalid @enderror">
-                            <option value="">Tidak ada link</option>
-                            @foreach($ceritas as $cerita)
-                                <option value="{{ $cerita->id }}" {{ (string) old('cerita_id', $slider->cerita_id) === (string) $cerita->id ? 'selected' : '' }}>
-                                    {{ $cerita->judul }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('cerita_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
+                    @include('content.slider._cerita-picker')
                     <div class="mb-5">
                         <div class="form-check form-switch">
                             <input type="hidden" name="status" value="0">

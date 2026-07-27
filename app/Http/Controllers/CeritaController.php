@@ -239,11 +239,13 @@ class CeritaController extends Controller
         $data = $request->validate([
             'form_type'      => 'nullable|string',
             'bulk_scope'     => 'required|in:all,selected',
-            'bulk_field'     => 'required|in:recomendation,wajib_dibaca',
+            'bulk_fields'    => 'required|array|min:1',
+            'bulk_fields.*'  => 'in:recomendation,wajib_dibaca',
             'bulk_action'    => 'required|in:enable,disable',
             'cerita_ids'     => 'required_if:bulk_scope,selected|array',
             'cerita_ids.*'   => 'integer|exists:mst_cerita,id',
         ], [
+            'bulk_fields.required' => 'Pilih minimal satu flag cerita.',
             'cerita_ids.required_if' => 'Pilih minimal satu judul atau aktifkan pilih semua judul.',
         ]);
 
@@ -253,11 +255,15 @@ class CeritaController extends Controller
             $query->whereIn('id', $data['cerita_ids']);
         }
 
-        $updatedStories = $query->update([
-            $data['bulk_field'] => $data['bulk_action'] === 'enable',
-        ]);
+        $updateData = collect($data['bulk_fields'])
+            ->mapWithKeys(fn ($field) => [$field => $data['bulk_action'] === 'enable'])
+            ->all();
 
-        $fieldLabel = $data['bulk_field'] === 'recomendation' ? 'Rekomendasi' : 'Wajib Dibaca';
+        $updatedStories = $query->update($updateData);
+
+        $fieldLabel = collect($data['bulk_fields'])
+            ->map(fn ($field) => $field === 'recomendation' ? 'Rekomendasi' : 'Wajib Dibaca')
+            ->join(' dan ');
         $actionLabel = $data['bulk_action'] === 'enable' ? 'diaktifkan' : 'dinonaktifkan';
 
         return redirect()

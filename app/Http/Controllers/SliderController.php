@@ -16,9 +16,10 @@ class SliderController extends Controller
 
     public function create()
     {
-        $ceritas = Cerita::orderBy('judul')->get(['id', 'judul']);
+        $selectedCerita = $this->findSelectedCerita(request()->old('cerita_id'));
+        $ceritas = $this->ceritaSelectOptions($selectedCerita?->id);
 
-        return view('content.slider.create', compact('ceritas'));
+        return view('content.slider.create', compact('ceritas', 'selectedCerita'));
     }
 
     public function store(Request $request)
@@ -47,9 +48,11 @@ class SliderController extends Controller
 
     public function edit(Slider $slider)
     {
-        $ceritas = Cerita::orderBy('judul')->get(['id', 'judul']);
+        $slider->load('cerita');
+        $selectedCerita = $this->findSelectedCerita(request()->old('cerita_id', $slider->cerita_id));
+        $ceritas = $this->ceritaSelectOptions($selectedCerita?->id);
 
-        return view('content.slider.edit', compact('slider', 'ceritas'));
+        return view('content.slider.edit', compact('slider', 'ceritas', 'selectedCerita'));
     }
 
     public function update(Request $request, Slider $slider)
@@ -73,5 +76,55 @@ class SliderController extends Controller
     {
         $slider->delete();
         return redirect()->route('slider.index')->with('success', 'Slider berhasil dihapus.');
+    }
+
+    public function ceritaOptions(Request $request)
+    {
+        $request->validate([
+            'q' => 'nullable|string|max:255',
+        ]);
+
+        $query = Cerita::query()
+            ->select('id', 'judul')
+            ->orderBy('judul');
+
+        if ($request->filled('q')) {
+            $keyword = mb_strtolower(trim($request->q));
+            $query->whereRaw('LOWER(judul) LIKE ?', ["%{$keyword}%"]);
+        }
+
+        return response()->json([
+            'data' => $query->limit(5)->get(),
+        ]);
+    }
+
+    private function ceritaSelectOptions(?int $selectedId = null)
+    {
+        $query = Cerita::query()
+            ->select('id', 'judul')
+            ->orderBy('judul');
+
+        if ($selectedId) {
+            $query->where('id', '!=', $selectedId);
+        }
+
+        $ceritas = $query->limit($selectedId ? 4 : 5)->get();
+
+        if ($selectedId && $selectedCerita = $this->findSelectedCerita($selectedId)) {
+            $ceritas->prepend($selectedCerita);
+        }
+
+        return $ceritas;
+    }
+
+    private function findSelectedCerita($selectedId): ?Cerita
+    {
+        if (!$selectedId) {
+            return null;
+        }
+
+        return Cerita::query()
+            ->select('id', 'judul')
+            ->find($selectedId);
     }
 }
