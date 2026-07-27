@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const label = picker.querySelector('.js-cerita-picker-label');
         const searchInput = picker.querySelector('.js-cerita-picker-search');
         const results = picker.querySelector('.js-cerita-picker-results');
-        let timeoutId = null;
+        let activeRequest = null;
 
         function selectOption(id, title) {
             hiddenInput.value = id;
@@ -75,20 +75,47 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
+        function renderMessage(message) {
+            results.innerHTML = '';
+
+            const emptyLink = optionButton({ id: '', judul: 'Tidak ada link' });
+            const messageItem = document.createElement('div');
+            messageItem.className = 'list-group-item text-muted';
+            messageItem.textContent = message;
+
+            results.appendChild(emptyLink);
+            results.appendChild(messageItem);
+        }
+
         function loadOptions(keyword) {
+            if (activeRequest) {
+                activeRequest.abort();
+            }
+
+            activeRequest = new AbortController();
             const url = new URL(searchUrl, window.location.origin);
             if (keyword) {
                 url.searchParams.set('q', keyword);
             }
 
+            renderMessage(keyword ? 'Mencari judul...' : 'Memuat judul...');
+
             fetch(url, {
                 headers: {
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
-                }
+                },
+                signal: activeRequest.signal
             })
                 .then(function (response) { return response.json(); })
-                .then(function (payload) { renderOptions(payload.data || []); });
+                .then(function (payload) { renderOptions(payload.data || []); })
+                .catch(function (error) {
+                    if (error.name === 'AbortError') {
+                        return;
+                    }
+
+                    renderMessage('Gagal memuat judul');
+                });
         }
 
         results.addEventListener('click', function (event) {
@@ -105,10 +132,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         searchInput.addEventListener('input', function () {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(function () {
-                loadOptions(searchInput.value.trim());
-            }, 250);
+            loadOptions(searchInput.value.trim());
+        });
+
+        picker.addEventListener('shown.bs.dropdown', function () {
+            searchInput.focus();
+            loadOptions(searchInput.value.trim());
         });
     });
 });
