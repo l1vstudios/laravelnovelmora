@@ -25,8 +25,10 @@ class AdsController extends Controller
         }
 
         $ads = $query->paginate(10)->withQueryString();
+        $globalAds = Ad::orderBy('title')->get(['id', 'title', 'media_type', 'status']);
+        $globalCeritas = $this->getPlacementCeritas();
 
-        return view('content.ads.index', compact('ads'));
+        return view('content.ads.index', compact('ads', 'globalAds', 'globalCeritas'));
     }
 
     public function create()
@@ -147,6 +149,101 @@ class AdsController extends Controller
         $ad->delete();
 
         return redirect()->route('ads.index')->with('success', 'Ads berhasil dihapus.');
+    }
+
+    public function globalPlacements(Request $request)
+    {
+        $data = $request->validate([
+            'form_type' => 'nullable|string',
+            'global_scope' => 'required|in:all,selected',
+            'global_action' => 'required|in:set,remove',
+            'ad_ids' => 'required|array|min:1',
+            'ad_ids.*' => 'integer|exists:mst_ads,id',
+            'cerita_ids' => 'required_if:global_scope,selected|array',
+            'cerita_ids.*' => 'integer|exists:mst_cerita,id',
+            'placement_position' => 'required|in:before,after',
+            'chapter_start' => 'required|integer|min:1|max:'.self::MAX_UNSIGNED_INTEGER,
+            'chapter_end' => 'required|integer|min:1|max:'.self::MAX_UNSIGNED_INTEGER,
+        ], [
+            'ad_ids.required' => 'Pilih minimal satu ads.',
+            'ad_ids.min' => 'Pilih minimal satu ads.',
+            'cerita_ids.required_if' => 'Pilih minimal satu judul atau aktifkan pilih semua judul.',
+            'chapter_start.max' => 'Maaf, angka chapter awal terlalu besar.',
+            'chapter_end.max' => 'Maaf, angka chapter akhir terlalu besar.',
+        ]);
+
+        $start = min((int) $data['chapter_start'], (int) $data['chapter_end']);
+        $end = max((int) $data['chapter_start'], (int) $data['chapter_end']);
+        $adIds = collect($data['ad_ids'])->map(fn ($id) => (int) $id)->unique()->values();
+        $position = $data['placement_position'];
+
+        $query = Cerita::query();
+
+        if ($data['global_scope'] === 'selected') {
+            $query->whereIn('id', $data['cerita_ids']);
+        }
+
+        $targetCeritas = $query->get(['id', 'parts', 'isi_cerita']);
+        $targetStoryIds = $targetCeritas->pluck('id');
+
+        if ($targetStoryIds->isEmpty()) {
+            return redirect()
+                ->route('ads.index')
+                ->with('success', 'Tidak ada cerita yang cocok untuk dipasang ads global.');
+        }
+
+        CeritaAd::whereIn('cerita_id', $targetStoryIds)
+            ->whereIn('ad_id', $adIds)
+            ->where('placement_position', $position)
+            ->whereBetween('after_chapter', [$start, $end])
+            ->where('is_global', true)
+            ->delete();
+
+        if ($data['global_action'] === 'remove') {
+            return redirect()
+                ->route('ads.index')
+                ->with('success', 'Ads global berhasil dihapus dari '.$targetStoryIds->count().' cerita.');
+        }
+
+        $placements = [];
+        $now = now();
+        $sortOrder = (int) CeritaAd::max('sort_order');
+        $updatedStories = 0;
+        $updatedPlacements = 0;
+
+        foreach ($targetCeritas as $cerita) {
+            $chapterTotal = max((int) $cerita->parts, count($cerita->isi_cerita ?? []));
+            $storyHasPlacement = false;
+
+            for ($chapter = $start; $chapter <= min($end, $chapterTotal); $chapter++) {
+                foreach ($adIds as $adId) {
+                    $placements[] = [
+                        'cerita_id' => $cerita->id,
+                        'ad_id' => $adId,
+                        'after_chapter' => $chapter,
+                        'placement_position' => $position,
+                        'is_global' => true,
+                        'sort_order' => ++$sortOrder,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                    $storyHasPlacement = true;
+                    $updatedPlacements++;
+                }
+            }
+
+            if ($storyHasPlacement) {
+                $updatedStories++;
+            }
+        }
+
+        foreach (array_chunk($placements, 1000) as $chunk) {
+            CeritaAd::insert($chunk);
+        }
+
+        return redirect()
+            ->route('ads.index')
+            ->with('success', 'Ads global berhasil diterapkan ke '.$updatedStories.' cerita ('.$updatedPlacements.' posisi).');
     }
 
     private function getPlacementCeritas()

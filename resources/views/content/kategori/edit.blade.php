@@ -25,7 +25,7 @@
                         <div class="form-check form-switch">
                             <input type="hidden" name="has_popup" value="0">
                             <input class="form-check-input" type="checkbox" name="has_popup" id="has_popup" value="1" {{ old('has_popup', $kategori->has_popup) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="has_popup">Has Popup</label>
+                            <label class="form-check-label" for="has_popup">Aktifkan Popup 17+</label>
                         </div>
                     </div>
                     <div class="d-flex gap-3">

@@ -1,22 +1,22 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\GeneralController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\AnalyticsController;
-use App\Http\Controllers\CeritaController;
 use App\Http\Controllers\AdsController;
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CeritaController;
 use App\Http\Controllers\DailyRewardController;
+use App\Http\Controllers\GeneralController;
 use App\Http\Controllers\KategoriController;
+use App\Http\Controllers\MstActionController;
+use App\Http\Controllers\MstUserController;
+use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RewardTypeController;
 use App\Http\Controllers\RewardVideoController;
-use App\Http\Controllers\SliderController;
-use App\Http\Controllers\NotifikasiController;
-use App\Http\Controllers\MstActionController;
-use App\Http\Controllers\VersiController;
-use App\Http\Controllers\MstUserController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SliderController;
+use App\Http\Controllers\VersiController;
+use Illuminate\Support\Facades\Route;
 
 // Auth (guest only)
 Route::middleware('guest')->group(function () {
@@ -57,6 +57,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('slider', SliderController::class)
             ->parameters(['slider' => 'slider']);
 
+        Route::put('ads/global-placements', [AdsController::class, 'globalPlacements'])
+            ->name('ads.global-placements');
         Route::resource('ads', AdsController::class);
 
         Route::resource('reward-types', RewardTypeController::class)
