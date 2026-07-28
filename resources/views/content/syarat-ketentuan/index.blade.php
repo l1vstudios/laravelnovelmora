@@ -14,14 +14,12 @@
             </div>
             <div class="table-responsive text-nowrap">
                 <table class="table table-hover">
-                    <thead><tr><th>#</th><th>Nama</th><th>Isi Konten</th><th>Dibuat</th><th>Aksi</th></tr></thead>
+                    <thead><tr><th>#</th><th>Konten</th><th>Aksi</th></tr></thead>
                     <tbody class="table-border-bottom-0">
                         @forelse($syaratKetentuans as $item)
                         <tr>
                             <td>{{ $loop->iteration + ($syaratKetentuans->currentPage() - 1) * $syaratKetentuans->perPage() }}</td>
-                            <td><span class="fw-medium">{{ $item->nama }}</span></td>
-                            <td><small class="text-muted">{{ Str::limit($item->isi_konten, 80) }}</small></td>
-                            <td>{{ $item->created_at ? $item->created_at->format('d M Y') : '-' }}</td>
+                            <td><small class="text-muted">{{ Str::limit($item->konten, 120) }}</small></td>
                             <td>
                                 <div class="dropdown">
                                     <button class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="icon-base bx bx-dots-vertical-rounded"></i></button>
@@ -37,7 +35,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="5" class="text-center py-6 text-muted">Belum ada syarat ketentuan. <a href="{{ route('syarat-ketentuan.create') }}">Tambah sekarang</a>.</td></tr>
+                        <tr><td colspan="3" class="text-center py-6 text-muted">Belum ada syarat ketentuan. <a href="{{ route('syarat-ketentuan.create') }}">Tambah sekarang</a>.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

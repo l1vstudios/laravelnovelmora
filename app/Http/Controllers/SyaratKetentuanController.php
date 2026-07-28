@@ -9,7 +9,7 @@ class SyaratKetentuanController extends Controller
 {
     public function index()
     {
-        $syaratKetentuans = SyaratKetentuan::latest()->paginate(10);
+        $syaratKetentuans = SyaratKetentuan::orderByDesc('id')->paginate(10);
 
         return view('content.syarat-ketentuan.index', compact('syaratKetentuans'));
     }
@@ -22,8 +22,7 @@ class SyaratKetentuanController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nama' => 'required|string|max:255',
-            'isi_konten' => 'required|string',
+            'konten' => 'required|string',
         ]);
 
         SyaratKetentuan::create($data);
@@ -44,8 +43,7 @@ class SyaratKetentuanController extends Controller
     public function update(Request $request, SyaratKetentuan $syaratKetentuan)
     {
         $data = $request->validate([
-            'nama' => 'required|string|max:255',
-            'isi_konten' => 'required|string',
+            'konten' => 'required|string',
         ]);
 
         $syaratKetentuan->update($data);

@@ -14,9 +14,7 @@ return new class extends Migration
 
         Schema::create('mst_syarat_ketentuan', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('nama');
-            $table->text('isi_konten');
-            $table->timestamps();
+            $table->text('konten');
         });
     }
 

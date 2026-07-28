@@ -8,5 +8,7 @@ class SyaratKetentuan extends Model
 {
     protected $table = 'mst_syarat_ketentuan';
 
-    protected $fillable = ['nama', 'isi_konten'];
+    public $timestamps = false;
+
+    protected $fillable = ['konten'];
 }
