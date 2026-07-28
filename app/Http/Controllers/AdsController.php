@@ -189,7 +189,7 @@ class AdsController extends Controller
                     continue;
                 }
 
-                foreach (array_unique($chapters) as $chapter) {
+                foreach ($chapters as $chapter) {
                     $chapterNumber = (int) $chapter;
 
                     if ($chapterNumber < 1 || $chapterNumber > $chapterTotal) {

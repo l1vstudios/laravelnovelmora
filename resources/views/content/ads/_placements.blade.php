@@ -95,7 +95,7 @@
             </div>
 
             <div class="mt-4">
-                <label class="form-label">Pilihan Ads</label>
+                <label class="form-label">Penempatan Dipilih</label>
                 <div id="placement-empty" class="text-muted small">Belum ada chapter dipilih.</div>
                 <div id="placement-selected" class="d-flex flex-wrap gap-2"></div>
             </div>
@@ -108,7 +108,8 @@
 (function () {
     const stories = @json($placementStories);
     const initialPlacements = @json($initialPlacements);
-    const selected = new Map();
+    const selected = [];
+    let nextPlacementKey = 0;
     let selectedStory = null;
     let selectedChapters = new Set();
 
@@ -129,10 +130,6 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
-    }
-
-    function key(storyId, position, chapter) {
-        return `${storyId}:${position}:${chapter}`;
     }
 
     function positionLabel(position) {
@@ -227,11 +224,11 @@
     }
 
     function renderSelected() {
-        selectedWrap.innerHTML = Array.from(selected.values()).map((item) => `
+        selectedWrap.innerHTML = selected.map((item, index) => `
             <span class="badge bg-label-primary d-inline-flex align-items-center gap-2 px-3 py-2">
                 ${escapeHtml(item.story_title)} - ${positionLabel(item.position)} Chapter ${item.chapter}
                 ${item.is_global ? '<span class="badge bg-primary">Global</span>' : ''}
-                <button type="button" class="btn btn-sm p-0 text-primary" data-remove="${item.story_id}:${item.position}:${item.chapter}" aria-label="Hapus">
+                <button type="button" class="btn btn-sm p-0 text-primary" data-remove-index="${index}" aria-label="Hapus">
                     <i class="icon-base bx bx-x"></i>
                 </button>
                 <input type="hidden" name="placements[${item.story_id}][${item.position}][]" value="${item.chapter}">
@@ -239,7 +236,7 @@
             </span>
         `).join('');
 
-        emptyState.style.display = selected.size ? 'none' : 'block';
+        emptyState.style.display = selected.length ? 'none' : 'block';
     }
 
     function resetChapterPicker() {
@@ -263,7 +260,10 @@
     }
 
     initialPlacements.forEach((item) => {
-        selected.set(key(item.story_id, item.position, item.chapter), item);
+        selected.push({
+            ...item,
+            row_key: ++nextPlacementKey,
+        });
     });
     renderSelected();
 
@@ -330,15 +330,13 @@
 
         selectedChapters.forEach((chapter) => {
             eligibleStories(chapter).forEach((story) => {
-                const placementKey = key(story.id, position, chapter);
-                const existing = selected.get(placementKey);
-
-                selected.set(placementKey, {
+                selected.push({
+                    row_key: ++nextPlacementKey,
                     story_id: story.id,
                     story_title: story.title,
                     position,
                     chapter,
-                    is_global: selectedAllStories() || Boolean(existing?.is_global),
+                    is_global: selectedAllStories(),
                 });
             });
         });
@@ -348,10 +346,10 @@
     });
 
     selectedWrap.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-remove]');
+        const button = event.target.closest('[data-remove-index]');
         if (!button) return;
 
-        selected.delete(button.dataset.remove);
+        selected.splice(Number(button.dataset.removeIndex), 1);
         renderSelected();
     });
 
