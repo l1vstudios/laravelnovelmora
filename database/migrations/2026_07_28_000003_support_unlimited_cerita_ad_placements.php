@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -18,19 +19,8 @@ return new class extends Migration
             }
         });
 
-        Schema::table('mst_cerita_ads', function (Blueprint $table) {
-            try {
-                $table->dropUnique('mst_cerita_ads_story_ad_position_chapter_unique');
-            } catch (Throwable) {
-                //
-            }
-
-            try {
-                $table->dropUnique(['cerita_id', 'ad_id', 'after_chapter']);
-            } catch (Throwable) {
-                //
-            }
-        });
+        $this->dropUniqueConstraint('mst_cerita_ads_story_ad_position_chapter_unique');
+        $this->dropUniqueConstraint('mst_cerita_ads_cerita_id_ad_id_after_chapter_unique');
     }
 
     public function down(): void
@@ -45,15 +35,30 @@ return new class extends Migration
             }
         });
 
-        Schema::table('mst_cerita_ads', function (Blueprint $table) {
-            try {
+        try {
+            Schema::table('mst_cerita_ads', function (Blueprint $table) {
                 $table->unique(
                     ['cerita_id', 'ad_id', 'placement_position', 'after_chapter'],
                     'mst_cerita_ads_story_ad_position_chapter_unique'
                 );
-            } catch (Throwable) {
-                //
-            }
-        });
+            });
+        } catch (Throwable) {
+            //
+        }
+    }
+
+    private function dropUniqueConstraint(string $name): void
+    {
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement(sprintf('alter table "mst_cerita_ads" drop constraint if exists "%s"', $name));
+
+            return;
+        }
+
+        try {
+            DB::statement(sprintf('alter table `mst_cerita_ads` drop index `%s`', $name));
+        } catch (Throwable) {
+            //
+        }
     }
 };
