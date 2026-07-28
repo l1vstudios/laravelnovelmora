@@ -26,9 +26,10 @@
             <div class="card-header"><h6 class="mb-0">Informasi Kategori</h6></div>
             <div class="card-body">
                 <div class="row g-4">
-                    <div class="col-sm-4"><small class="text-muted d-block mb-1">Nama</small><span class="fw-medium text-capitalize">{{ $kategori->default_title }}</span></div>
-                    <div class="col-sm-4"><small class="text-muted d-block mb-1">Jumlah Cerita</small><span class="badge bg-label-info">{{ $kategori->ceritas->count() }} cerita</span></div>
-                    <div class="col-sm-4"><small class="text-muted d-block mb-1">Dibuat</small><span class="fw-medium">{{ $kategori->created_at ? $kategori->created_at->format('d M Y') : '-' }}</span></div>
+                    <div class="col-sm-3"><small class="text-muted d-block mb-1">Nama</small><span class="fw-medium text-capitalize">{{ $kategori->default_title }}</span></div>
+                    <div class="col-sm-3"><small class="text-muted d-block mb-1">Popup</small>@if($kategori->has_popup)<span class="badge bg-label-success">True</span>@else<span class="badge bg-label-secondary">False</span>@endif</div>
+                    <div class="col-sm-3"><small class="text-muted d-block mb-1">Jumlah Cerita</small><span class="badge bg-label-info">{{ $kategori->ceritas->count() }} cerita</span></div>
+                    <div class="col-sm-3"><small class="text-muted d-block mb-1">Dibuat</small><span class="fw-medium">{{ $kategori->created_at ? $kategori->created_at->format('d M Y') : '-' }}</span></div>
                 </div>
             </div>
         </div>

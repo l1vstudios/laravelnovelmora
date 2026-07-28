@@ -33,6 +33,9 @@
                 <dt class="col-sm-3">Kategori</dt>
                 <dd class="col-sm-9">{{ $cerita->kategori?->default_title ?? '-' }}</dd>
 
+                <dt class="col-sm-3">Positions Index</dt>
+                <dd class="col-sm-9">{{ $cerita->positions_index ?? 0 }}</dd>
+
                 <dt class="col-sm-3">Status</dt>
                 <dd class="col-sm-9">
                   @if ($cerita->status)

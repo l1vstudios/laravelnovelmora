@@ -43,6 +43,7 @@
               <tr>
                 <th>#</th>
                 <th>Nama Kategori</th>
+                <th>Popup</th>
                 <th>Jumlah Cerita</th>
                 <th>Dibuat</th>
                 <th>Aksi</th>
@@ -53,6 +54,13 @@
                 <tr>
                   <td>{{ $loop->iteration + ($kategoris->currentPage() - 1) * $kategoris->perPage() }}</td>
                   <td><span class="fw-medium text-capitalize">{{ $kat->default_title }}</span></td>
+                  <td>
+                    @if($kat->has_popup)
+                      <span class="badge bg-label-success">True</span>
+                    @else
+                      <span class="badge bg-label-secondary">False</span>
+                    @endif
+                  </td>
                   <td><span class="badge bg-label-info">{{ $kat->ceritas_count }} cerita</span></td>
                   <td>{{ $kat->created_at ? $kat->created_at->format('d M Y') : '-' }}</td>
                   <td>
@@ -77,7 +85,7 @@
                 </tr>
               @empty
                 <tr>
-                  <td colspan="5" class="text-center py-6 text-muted">Belum ada kategori. <a
+                  <td colspan="6" class="text-center py-6 text-muted">Belum ada kategori. <a
                       href="{{ route('kategori.create') }}">Tambah sekarang</a>.</td>
                 </tr>
               @endforelse

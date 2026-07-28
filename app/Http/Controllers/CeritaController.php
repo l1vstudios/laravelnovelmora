@@ -1,11 +1,14 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use App\Models\Ad;
 use App\Models\Cerita;
 use App\Models\CeritaAd;
 use App\Models\Kategori;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+
 class CeritaController extends Controller
 {
     private const MAX_UNSIGNED_INTEGER = 4294967295;
@@ -34,67 +37,79 @@ class CeritaController extends Controller
 
         return view('content.cerita.index', compact('ceritas', 'lockCeritas', 'bulkCeritas'));
     }
+
     public function create()
     {
         $kategoris = Kategori::orderBy('default_title')->get();
         $ads = Ad::active()->orderBy('title')->get();
+
         return view('content.cerita.create', compact('kategoris', 'ads'));
     }
+
     public function store(Request $request)
     {
         $request->validate([
-            'judul'                   => 'required|string|max:255',
-            'sinopsis'                => 'nullable|string',
-            'id_kategori'             => 'nullable|exists:mst_kategori,id',
-            'cover'                   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'ads_after_chapters'      => 'nullable|array',
-            'ads_after_chapters.*'    => 'nullable|array',
-            'ads_after_chapters.*.*'  => 'integer|exists:mst_ads,id',
-            'ads_before_chapters'     => 'nullable|array',
-            'ads_before_chapters.*'   => 'nullable|array',
+            'judul' => 'required|string|max:255',
+            'sinopsis' => 'nullable|string',
+            'id_kategori' => 'nullable|exists:mst_kategori,id',
+            'positions_index' => 'nullable|integer',
+            'cover' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ad_placements' => 'nullable|array',
+            'ad_placements.*.ad_id' => 'nullable|integer|exists:mst_ads,id',
+            'ad_placements.*.position' => 'nullable|in:before,after',
+            'ad_placements.*.chapter' => 'nullable|integer|min:1|max:'.self::MAX_UNSIGNED_INTEGER,
+            'ads_after_chapters' => 'nullable|array',
+            'ads_after_chapters.*' => 'nullable|array',
+            'ads_after_chapters.*.*' => 'integer|exists:mst_ads,id',
+            'ads_before_chapters' => 'nullable|array',
+            'ads_before_chapters.*' => 'nullable|array',
             'ads_before_chapters.*.*' => 'integer|exists:mst_ads,id',
-            'chapter_titles'          => 'nullable|array',
-            'chapter_titles.*'        => 'nullable|string|max:255',
-            'chapters'                => 'nullable|array',
-            'chapters.*'              => 'nullable|string',
+            'chapter_titles' => 'nullable|array',
+            'chapter_titles.*' => 'nullable|string|max:255',
+            'chapters' => 'nullable|array',
+            'chapters.*' => 'nullable|string',
         ]);
         $isiCerita = [];
         $lock = [];
         $chapterTitles = $request->input('chapter_titles', []);
         foreach ($request->input('chapters', []) as $i => $content) {
-            $key = 'chapter ' . ($i + 1);
+            $key = 'chapter '.($i + 1);
             $isiCerita[$key] = [
-                'title' => $this->normalizeChapterTitle($chapterTitles[$i] ?? 'Chapter ' . ($i + 1)),
+                'title' => $this->normalizeChapterTitle($chapterTitles[$i] ?? 'Chapter '.($i + 1)),
                 'content' => $this->normalizeChapterContent($content),
             ];
-            $lock[$key]      = in_array((string)($i + 1), $request->input('locked_chapters', []));
+            $lock[$key] = in_array((string) ($i + 1), $request->input('locked_chapters', []));
         }
         $coverPath = null;
         if ($request->hasFile('cover')) {
             $coverPath = $request->file('cover')->store('covers', 'public');
         }
         $cerita = Cerita::create([
-            'judul'         => $request->judul,
-            'sinopsis'      => $request->sinopsis,
-            'cover'         => $coverPath,
-            'id_kategori'   => $request->id_kategori,
-            'status'        => $request->boolean('status'),
+            'judul' => $request->judul,
+            'sinopsis' => $request->sinopsis,
+            'cover' => $coverPath,
+            'id_kategori' => $request->id_kategori,
+            'positions_index' => $request->integer('positions_index', 0),
+            'status' => $request->boolean('status'),
             'recomendation' => $request->boolean('recomendation'),
-            'wajib_dibaca'  => $request->boolean('wajib_dibaca'),
-            'isi_cerita'    => $isiCerita ?: null,
-            'lock'          => $lock ?: null,
-            'parts'         => count($isiCerita),
+            'wajib_dibaca' => $request->boolean('wajib_dibaca'),
+            'isi_cerita' => $isiCerita ?: null,
+            'lock' => $lock ?: null,
+            'parts' => count($isiCerita),
         ]);
 
         $this->syncAdPlacements($cerita, $request, count($isiCerita));
 
         return redirect()->route('cerita.index')->with('success', 'Cerita berhasil ditambahkan.');
     }
+
     public function show(Cerita $cerita)
     {
         $cerita->load('adPlacements.ad');
+
         return view('content.cerita.show', compact('cerita'));
     }
+
     public function edit(Cerita $cerita)
     {
         $kategoris = Kategori::orderBy('default_title')->get();
@@ -104,47 +119,55 @@ class CeritaController extends Controller
             ->orWhereIn('id', $selectedAdIds)
             ->orderBy('title')
             ->get();
+
         return view('content.cerita.edit', compact('cerita', 'kategoris', 'ads'));
     }
+
     public function update(Request $request, Cerita $cerita)
     {
         $request->validate([
-            'judul'                   => 'required|string|max:255',
-            'sinopsis'                => 'nullable|string',
-            'id_kategori'             => 'nullable|exists:mst_kategori,id',
-            'cover'                   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'ads_after_chapters'      => 'nullable|array',
-            'ads_after_chapters.*'    => 'nullable|array',
-            'ads_after_chapters.*.*'  => 'integer|exists:mst_ads,id',
-            'ads_before_chapters'     => 'nullable|array',
-            'ads_before_chapters.*'   => 'nullable|array',
+            'judul' => 'required|string|max:255',
+            'sinopsis' => 'nullable|string',
+            'id_kategori' => 'nullable|exists:mst_kategori,id',
+            'positions_index' => 'nullable|integer',
+            'cover' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ad_placements' => 'nullable|array',
+            'ad_placements.*.ad_id' => 'nullable|integer|exists:mst_ads,id',
+            'ad_placements.*.position' => 'nullable|in:before,after',
+            'ad_placements.*.chapter' => 'nullable|integer|min:1|max:'.self::MAX_UNSIGNED_INTEGER,
+            'ads_after_chapters' => 'nullable|array',
+            'ads_after_chapters.*' => 'nullable|array',
+            'ads_after_chapters.*.*' => 'integer|exists:mst_ads,id',
+            'ads_before_chapters' => 'nullable|array',
+            'ads_before_chapters.*' => 'nullable|array',
             'ads_before_chapters.*.*' => 'integer|exists:mst_ads,id',
-            'chapter_titles'          => 'nullable|array',
-            'chapter_titles.*'        => 'nullable|string|max:255',
-            'chapters'                => 'nullable|array',
-            'chapters.*'              => 'nullable|string',
+            'chapter_titles' => 'nullable|array',
+            'chapter_titles.*' => 'nullable|string|max:255',
+            'chapters' => 'nullable|array',
+            'chapters.*' => 'nullable|string',
         ]);
         $isiCerita = [];
         $lock = [];
         $chapterTitles = $request->input('chapter_titles', []);
         foreach ($request->input('chapters', []) as $i => $content) {
-            $key = 'chapter ' . ($i + 1);
+            $key = 'chapter '.($i + 1);
             $isiCerita[$key] = [
-                'title' => $this->normalizeChapterTitle($chapterTitles[$i] ?? 'Chapter ' . ($i + 1)),
+                'title' => $this->normalizeChapterTitle($chapterTitles[$i] ?? 'Chapter '.($i + 1)),
                 'content' => $this->normalizeChapterContent($content),
             ];
-            $lock[$key]      = in_array((string)($i + 1), $request->input('locked_chapters', []));
+            $lock[$key] = in_array((string) ($i + 1), $request->input('locked_chapters', []));
         }
         $data = [
-            'judul'         => $request->judul,
-            'sinopsis'      => $request->sinopsis,
-            'id_kategori'   => $request->id_kategori,
-            'status'        => $request->boolean('status'),
+            'judul' => $request->judul,
+            'sinopsis' => $request->sinopsis,
+            'id_kategori' => $request->id_kategori,
+            'positions_index' => $request->integer('positions_index', 0),
+            'status' => $request->boolean('status'),
             'recomendation' => $request->boolean('recomendation'),
-            'wajib_dibaca'  => $request->boolean('wajib_dibaca'),
-            'isi_cerita'    => $isiCerita ?: null,
-            'lock'          => $lock ?: null,
-            'parts'         => count($isiCerita),
+            'wajib_dibaca' => $request->boolean('wajib_dibaca'),
+            'isi_cerita' => $isiCerita ?: null,
+            'lock' => $lock ?: null,
+            'parts' => count($isiCerita),
         ];
         if ($request->hasFile('cover')) {
             if ($cerita->cover) {
@@ -154,31 +177,34 @@ class CeritaController extends Controller
         }
         $cerita->update($data);
         $this->syncAdPlacements($cerita, $request, count($isiCerita));
+
         return redirect()->route('cerita.index')->with('success', 'Cerita berhasil diperbarui.');
     }
+
     public function destroy(Cerita $cerita)
     {
         if ($cerita->cover) {
             Storage::disk('public')->delete($cerita->cover);
         }
         $cerita->delete();
+
         return redirect()->route('cerita.index')->with('success', 'Cerita berhasil dihapus.');
     }
 
     public function globalLock(Request $request)
     {
         $data = $request->validate([
-            'lock_scope'      => 'required|in:all,selected',
-            'form_type'       => 'nullable|string',
-            'lock_action'     => 'required|in:lock,unlock',
-            'cerita_ids'      => 'required_if:lock_scope,selected|array',
-            'cerita_ids.*'    => 'integer|exists:mst_cerita,id',
-            'chapter_start'   => 'required|integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
-            'chapter_end'     => 'required|integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
+            'lock_scope' => 'required|in:all,selected',
+            'form_type' => 'nullable|string',
+            'lock_action' => 'required|in:lock,unlock',
+            'cerita_ids' => 'required_if:lock_scope,selected|array',
+            'cerita_ids.*' => 'integer|exists:mst_cerita,id',
+            'chapter_start' => 'required|integer|min:1|max:'.self::MAX_UNSIGNED_INTEGER,
+            'chapter_end' => 'required|integer|min:1|max:'.self::MAX_UNSIGNED_INTEGER,
         ], [
             'cerita_ids.required_if' => 'Pilih minimal satu judul atau aktifkan pilih semua judul.',
-            'chapter_start.max'      => 'Maaf, angka chapter awal terlalu besar.',
-            'chapter_end.max'        => 'Maaf, angka chapter akhir terlalu besar.',
+            'chapter_start.max' => 'Maaf, angka chapter awal terlalu besar.',
+            'chapter_end.max' => 'Maaf, angka chapter akhir terlalu besar.',
         ]);
 
         $start = min((int) $data['chapter_start'], (int) $data['chapter_end']);
@@ -206,7 +232,7 @@ class CeritaController extends Controller
                 $storyChanged = false;
 
                 for ($chapter = $start; $chapter <= min($end, $chapterTotal); $chapter++) {
-                    $key = 'chapter ' . $chapter;
+                    $key = 'chapter '.$chapter;
 
                     if (($lock[$key] ?? false) === $targetLockState) {
                         continue;
@@ -217,7 +243,7 @@ class CeritaController extends Controller
                     $updatedChapters++;
                 }
 
-                if (!$storyChanged) {
+                if (! $storyChanged) {
                     continue;
                 }
 
@@ -237,13 +263,13 @@ class CeritaController extends Controller
     public function bulkPilihan(Request $request)
     {
         $data = $request->validate([
-            'form_type'      => 'nullable|string',
-            'bulk_scope'     => 'required|in:all,selected',
-            'bulk_fields'    => 'required|array|min:1',
-            'bulk_fields.*'  => 'in:recomendation,wajib_dibaca',
-            'bulk_action'    => 'required|in:enable,disable',
-            'cerita_ids'     => 'required_if:bulk_scope,selected|array',
-            'cerita_ids.*'   => 'integer|exists:mst_cerita,id',
+            'form_type' => 'nullable|string',
+            'bulk_scope' => 'required|in:all,selected',
+            'bulk_fields' => 'required|array|min:1',
+            'bulk_fields.*' => 'in:recomendation,wajib_dibaca',
+            'bulk_action' => 'required|in:enable,disable',
+            'cerita_ids' => 'required_if:bulk_scope,selected|array',
+            'cerita_ids.*' => 'integer|exists:mst_cerita,id',
         ], [
             'bulk_fields.required' => 'Pilih minimal satu flag cerita.',
             'cerita_ids.required_if' => 'Pilih minimal satu judul atau aktifkan pilih semua judul.',
@@ -275,18 +301,53 @@ class CeritaController extends Controller
     {
         $globalPlacements = $cerita->adPlacements()
             ->get(['ad_id', 'after_chapter', 'placement_position', 'is_global'])
-            ->mapWithKeys(function ($placement) {
+            ->groupBy(function ($placement) {
                 $position = $placement->placement_position ?: 'after';
 
-                return [
-                    $position . ':' . $placement->after_chapter . ':' . $placement->ad_id => (bool) $placement->is_global,
-                ];
-            });
+                return $position.':'.$placement->after_chapter.':'.$placement->ad_id;
+            })
+            ->map(fn ($items) => $items->contains(fn ($placement) => (bool) $placement->is_global));
 
         $cerita->adPlacements()->delete();
 
         $placements = [];
         $now = now();
+        $sortOrder = 0;
+
+        if (is_array($request->input('ad_placements'))) {
+            foreach ($request->input('ad_placements', []) as $placement) {
+                if (! is_array($placement)) {
+                    continue;
+                }
+
+                $adId = (int) ($placement['ad_id'] ?? 0);
+                $chapterNumber = (int) ($placement['chapter'] ?? 0);
+                $position = $placement['position'] ?? 'after';
+
+                if (! $adId || ! in_array($position, ['before', 'after'], true) || $chapterNumber < 1 || $chapterNumber > $chapterTotal) {
+                    continue;
+                }
+
+                $globalKey = $position.':'.$chapterNumber.':'.$adId;
+
+                $placements[] = [
+                    'cerita_id' => $cerita->id,
+                    'ad_id' => $adId,
+                    'after_chapter' => $chapterNumber,
+                    'placement_position' => $position,
+                    'is_global' => (bool) ($globalPlacements[$globalKey] ?? false),
+                    'sort_order' => ++$sortOrder,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            if ($placements) {
+                CeritaAd::insert($placements);
+            }
+
+            return;
+        }
 
         foreach ([
             'before' => 'ads_before_chapters',
@@ -295,22 +356,23 @@ class CeritaController extends Controller
             foreach ($request->input($inputName, []) as $chapter => $adIds) {
                 $chapterNumber = (int) $chapter;
 
-                if ($chapterNumber < 1 || $chapterNumber > $chapterTotal || !is_array($adIds)) {
+                if ($chapterNumber < 1 || $chapterNumber > $chapterTotal || ! is_array($adIds)) {
                     continue;
                 }
 
                 foreach (array_unique($adIds) as $adId) {
                     $adId = (int) $adId;
-                    $globalKey = $position . ':' . $chapterNumber . ':' . $adId;
+                    $globalKey = $position.':'.$chapterNumber.':'.$adId;
 
                     $placements[] = [
-                        'cerita_id'          => $cerita->id,
-                        'ad_id'              => $adId,
-                        'after_chapter'      => $chapterNumber,
+                        'cerita_id' => $cerita->id,
+                        'ad_id' => $adId,
+                        'after_chapter' => $chapterNumber,
                         'placement_position' => $position,
-                        'is_global'          => (bool) ($globalPlacements[$globalKey] ?? false),
-                        'created_at'         => $now,
-                        'updated_at'         => $now,
+                        'is_global' => (bool) ($globalPlacements[$globalKey] ?? false),
+                        'sort_order' => ++$sortOrder,
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ];
                 }
             }

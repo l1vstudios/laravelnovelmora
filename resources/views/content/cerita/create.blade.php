@@ -105,42 +105,77 @@
       return wrapper.textContent.replace(/\n{3,}/g, '\n\n').trim();
     }
 
+    function normalizeSelectedAdPlacements(selectedAds = {}, chapterNumber) {
+      if (Array.isArray(selectedAds) && selectedAds.some((item) => item && typeof item === 'object' && 'ad_id' in item)) {
+        return selectedAds;
+      }
+
+      if (Array.isArray(selectedAds)) {
+        return selectedAds.map((adId) => ({ ad_id: adId, position: 'after', chapter: chapterNumber }));
+      }
+
+      return ['before', 'after'].flatMap((position) => (selectedAds[position] || [])
+        .map((adId) => ({ ad_id: adId, position, chapter: chapterNumber })));
+    }
+
+    let adPlacementCount = 0;
+
+    function renderAdPlacementRow(chapterNumber, placement = {}) {
+      adPlacementCount++;
+      const selectedAdId = String(placement.ad_id || '');
+      const selectedPosition = placement.position === 'before' ? 'before' : 'after';
+      const adOptions = [
+        '<option value="">-- Pilih Ads --</option>',
+        ...availableAds.map((ad) => {
+          const selected = selectedAdId === String(ad.id) ? 'selected' : '';
+          const adLabel = `${escapeHtml(ad.title)} (${ad.media_type === 'video' ? 'Video' : 'Gambar'})`;
+
+          return `<option value="${ad.id}" ${selected}>${adLabel}</option>`;
+        }),
+      ].join('');
+
+      return `
+        <div class="row g-3 align-items-center mb-3 chapter-ad-placement">
+          <div class="col-md-6">
+            <select name="ad_placements[${adPlacementCount}][ad_id]" class="form-select form-select-sm">
+              ${adOptions}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select name="ad_placements[${adPlacementCount}][position]" class="form-select form-select-sm">
+              <option value="after" ${selectedPosition === 'after' ? 'selected' : ''}>Setelah</option>
+              <option value="before" ${selectedPosition === 'before' ? 'selected' : ''}>Sebelum</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <span class="badge bg-label-secondary chapter-ad-label">Chapter ${chapterNumber}</span>
+            <input type="hidden" class="chapter-ad-chapter" name="ad_placements[${adPlacementCount}][chapter]" value="${chapterNumber}">
+          </div>
+          <div class="col-md-1 text-end">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAdPlacement(this)">
+              <i class="icon-base bx bx-trash"></i>
+            </button>
+          </div>
+        </div>`;
+    }
+
     function renderAdsOptions(chapterNumber, selectedAds = {}) {
       if (!availableAds.length) {
         return '<small class="text-muted">Belum ada ads aktif.</small>';
       }
 
-      const selectedBefore = Array.isArray(selectedAds)
-        ? []
-        : (selectedAds.before || []).map(String);
-      const selectedAfter = Array.isArray(selectedAds)
-        ? selectedAds.map(String)
-        : (selectedAds.after || []).map(String);
+      const rows = normalizeSelectedAdPlacements(selectedAds, chapterNumber)
+        .map((placement) => renderAdPlacementRow(chapterNumber, placement))
+        .join('');
 
-      function renderPosition(position, label, selected) {
-        return `
-          <div class="mb-3">
-            <small class="text-muted d-block mb-2">${label}</small>
-            <div class="d-flex flex-wrap gap-3">
-              ${availableAds.map((ad) => {
-                const checked = selected.includes(String(ad.id)) ? 'checked' : '';
-                const adLabel = `${escapeHtml(ad.title)} (${ad.media_type === 'video' ? 'Video' : 'Gambar'})`;
-
-                return `
-                  <div class="form-check form-check-inline mb-2">
-                    <input class="form-check-input chapter-ad" type="checkbox"
-                      data-position="${position}"
-                      name="ads_${position}_chapters[${chapterNumber}][]" value="${ad.id}"
-                      id="ad_${position}_${chapterNumber}_${ad.id}" ${checked}>
-                    <label class="form-check-label" for="ad_${position}_${chapterNumber}_${ad.id}">${adLabel}</label>
-                  </div>`;
-              }).join('')}
-            </div>
-          </div>`;
-      }
-
-      return renderPosition('before', 'Sebelum chapter ini', selectedBefore)
-        + renderPosition('after', 'Setelah chapter ini', selectedAfter);
+      return `
+        <div class="chapter-ads-list">
+          ${rows}
+        </div>
+        <div class="chapter-ads-empty text-muted small mb-3" style="${rows ? 'display:none;' : ''}">Belum ada ads untuk chapter ini.</div>
+        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addAdPlacement(this)">
+          <i class="icon-base bx bx-plus me-1"></i> Tambah Ads
+        </button>`;
     }
 
     let chapterCount = 0;
@@ -189,9 +224,32 @@
       renumberChapters();
     }
 
+    function addAdPlacement(btn, placement = {}) {
+      const row = btn.closest('.chapter-row');
+      const chapterNumber = Number(row.dataset.index || 1);
+      const list = row.querySelector('.chapter-ads-list');
+
+      list.insertAdjacentHTML('beforeend', renderAdPlacementRow(chapterNumber, placement));
+      refreshAdPlacementEmpty(row);
+    }
+
+    function removeAdPlacement(btn) {
+      const row = btn.closest('.chapter-row');
+      btn.closest('.chapter-ad-placement').remove();
+      refreshAdPlacementEmpty(row);
+    }
+
+    function refreshAdPlacementEmpty(row) {
+      const empty = row.querySelector('.chapter-ads-empty');
+      if (empty) {
+        empty.style.display = row.querySelectorAll('.chapter-ad-placement').length ? 'none' : 'block';
+      }
+    }
+
     function renumberChapters() {
       document.querySelectorAll('.chapter-row').forEach((row, i) => {
         const num = i + 1;
+        row.dataset.index = num;
         row.querySelector('.fw-medium').textContent = `Chapter ${num}`;
         const lock = row.querySelector('.chapter-lock');
         lock.value = num;
@@ -205,12 +263,12 @@
 
         row.querySelector('.chapter-content').placeholder = `Tulis isi chapter ${num}...`;
 
-        row.querySelectorAll('.chapter-ad').forEach((adInput) => {
-          const position = adInput.dataset.position || 'after';
-          adInput.name = `ads_${position}_chapters[${num}][]`;
-          adInput.id = `ad_${position}_${num}_${adInput.value}`;
-          const adLabel = adInput.nextElementSibling;
-          if (adLabel) adLabel.setAttribute('for', adInput.id);
+        row.querySelectorAll('.chapter-ad-chapter').forEach((chapterInput) => {
+          chapterInput.value = num;
+        });
+
+        row.querySelectorAll('.chapter-ad-label').forEach((label) => {
+          label.textContent = `Chapter ${num}`;
         });
       });
       chapterCount = document.querySelectorAll('.chapter-row').length;
@@ -280,6 +338,14 @@
                     </option>
                   @endforeach
                 </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Positions Index</label>
+                <input type="number" name="positions_index" class="form-control @error('positions_index') is-invalid @enderror"
+                  value="{{ old('positions_index', 0) }}" placeholder="0">
+                @error('positions_index')
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
               </div>
               <div class="col-12">
                 <label for="sinopsis" class="form-label">Sinopsis</label>
@@ -369,6 +435,11 @@
 
     document.addEventListener('DOMContentLoaded', function() {
       const oldChapters = @json(old('chapters', []));
+      const oldAdPlacementRows = @json(old('ad_placements', null));
+      const oldAdPlacements = oldAdPlacementRows
+        ? Object.values(oldAdPlacementRows).filter((placement) => placement && typeof placement === 'object')
+        : null;
+
       if (oldChapters.length) {
         const oldTitles = @json(old('chapter_titles', []));
         const oldLocks = @json(old('locked_chapters', []));
@@ -379,10 +450,12 @@
           const title = oldTitles[i] || '';
           const chapterNum = i + 1;
           const locked = oldLocks.includes(String(chapterNum));
-          const ads = {
-            before: oldBeforeAds[chapterNum] || [],
-            after: oldAds[chapterNum] || [],
-          };
+          const ads = oldAdPlacements
+            ? oldAdPlacements.filter((placement) => Number(placement.chapter) === chapterNum)
+            : {
+                before: oldBeforeAds[chapterNum] || [],
+                after: oldAds[chapterNum] || [],
+              };
           addChapter(title, content, locked, ads);
         });
       }

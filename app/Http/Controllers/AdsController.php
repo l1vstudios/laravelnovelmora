@@ -43,17 +43,17 @@ class AdsController extends Controller
             : 'nullable|required_without:media_url|file|mimes:jpg,jpeg,png,webp,gif|max:5120';
 
         $data = $request->validate([
-            'title'             => 'required|string|max:255',
-            'media_type'        => 'required|in:image,video',
-            'media_file'        => $mediaFileRule,
-            'media_url'         => 'nullable|required_without:media_file|url|max:2048',
-            'target_url'        => 'nullable|url|max:2048',
-            'status'            => 'required|boolean',
-            'placements'        => 'nullable|array',
-            'placements.*'      => 'nullable|array',
-            'placements.*.*'    => 'nullable|array',
-            'placements.*.*.*'  => 'integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
-            'placement_global'  => 'nullable|array',
+            'title' => 'required|string|max:255',
+            'media_type' => 'required|in:image,video',
+            'media_file' => $mediaFileRule,
+            'media_url' => 'nullable|required_without:media_file|url|max:2048',
+            'target_url' => 'nullable|url|max:2048',
+            'status' => 'required|boolean',
+            'placements' => 'nullable|array',
+            'placements.*' => 'nullable|array',
+            'placements.*.*' => 'nullable|array',
+            'placements.*.*.*' => 'integer|min:1|max:'.self::MAX_UNSIGNED_INTEGER,
+            'placement_global' => 'nullable|array',
         ], [
             'placements.*.*.*.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
         ]);
@@ -97,17 +97,17 @@ class AdsController extends Controller
             : 'nullable|file|mimes:jpg,jpeg,png,webp,gif|max:5120';
 
         $data = $request->validate([
-            'title'             => 'required|string|max:255',
-            'media_type'        => 'required|in:image,video',
-            'media_file'        => $mediaFileRule,
-            'media_url'         => $mediaUrlRule,
-            'target_url'        => 'nullable|url|max:2048',
-            'status'            => 'required|boolean',
-            'placements'        => 'nullable|array',
-            'placements.*'      => 'nullable|array',
-            'placements.*.*'    => 'nullable|array',
-            'placements.*.*.*'  => 'integer|min:1|max:' . self::MAX_UNSIGNED_INTEGER,
-            'placement_global'  => 'nullable|array',
+            'title' => 'required|string|max:255',
+            'media_type' => 'required|in:image,video',
+            'media_file' => $mediaFileRule,
+            'media_url' => $mediaUrlRule,
+            'target_url' => 'nullable|url|max:2048',
+            'status' => 'required|boolean',
+            'placements' => 'nullable|array',
+            'placements.*' => 'nullable|array',
+            'placements.*.*' => 'nullable|array',
+            'placements.*.*.*' => 'integer|min:1|max:'.self::MAX_UNSIGNED_INTEGER,
+            'placement_global' => 'nullable|array',
         ], [
             'placements.*.*.*.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
         ]);
@@ -160,7 +160,7 @@ class AdsController extends Controller
 
         $ceritaIds = collect($request->input('placements', []))
             ->keys()
-            ->map(fn($id) => (int) $id)
+            ->map(fn ($id) => (int) $id)
             ->filter()
             ->values();
 
@@ -171,20 +171,21 @@ class AdsController extends Controller
         $ceritas = Cerita::whereIn('id', $ceritaIds)->get(['id', 'parts', 'isi_cerita'])->keyBy('id');
         $placements = [];
         $now = now();
+        $sortOrder = 0;
 
         $globalFlags = $request->input('placement_global', []);
 
         foreach ($request->input('placements', []) as $ceritaId => $positions) {
             $cerita = $ceritas->get((int) $ceritaId);
 
-            if (!$cerita || !is_array($positions)) {
+            if (! $cerita || ! is_array($positions)) {
                 continue;
             }
 
             $chapterTotal = max((int) $cerita->parts, count($cerita->isi_cerita ?? []));
 
             foreach ($positions as $position => $chapters) {
-                if (!in_array($position, ['before', 'after'], true) || !is_array($chapters)) {
+                if (! in_array($position, ['before', 'after'], true) || ! is_array($chapters)) {
                     continue;
                 }
 
@@ -196,13 +197,14 @@ class AdsController extends Controller
                     }
 
                     $placements[] = [
-                        'cerita_id'           => $cerita->id,
-                        'ad_id'               => $ad->id,
-                        'after_chapter'       => $chapterNumber,
-                        'placement_position'  => $position,
-                        'is_global'           => isset($globalFlags[$cerita->id][$position][$chapterNumber]),
-                        'created_at'          => $now,
-                        'updated_at'          => $now,
+                        'cerita_id' => $cerita->id,
+                        'ad_id' => $ad->id,
+                        'after_chapter' => $chapterNumber,
+                        'placement_position' => $position,
+                        'is_global' => isset($globalFlags[$cerita->id][$position][$chapterNumber]),
+                        'sort_order' => ++$sortOrder,
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ];
                 }
             }

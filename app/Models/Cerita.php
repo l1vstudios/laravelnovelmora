@@ -11,15 +11,16 @@ class Cerita extends Model
     protected $fillable = [
         'judul', 'cover', 'parts', 'isi_cerita', 'status',
         'sinopsis', 'total_read', 'total_vote', 'total_share',
-        'recomendation', 'wajib_dibaca', 'id_kategori', 'lock',
+        'recomendation', 'wajib_dibaca', 'id_kategori', 'positions_index', 'lock',
     ];
 
     protected $casts = [
-        'isi_cerita'    => 'array',
-        'lock'          => 'array',
-        'status'        => 'boolean',
+        'isi_cerita' => 'array',
+        'lock' => 'array',
+        'status' => 'boolean',
         'recomendation' => 'boolean',
-        'wajib_dibaca'  => 'boolean',
+        'wajib_dibaca' => 'boolean',
+        'positions_index' => 'integer',
     ];
 
     public function kategori()
@@ -31,6 +32,8 @@ class Cerita extends Model
     {
         return $this->hasMany(CeritaAd::class, 'cerita_id')
             ->orderBy('after_chapter')
-            ->orderBy('placement_position');
+            ->orderBy('placement_position')
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 }

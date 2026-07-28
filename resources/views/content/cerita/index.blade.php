@@ -205,6 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <th>Cover</th>
                             <th>Judul</th>
                             <th>Kategori</th>
+                            <th>Index</th>
                             <th>Parts</th>
                             <th>Read</th>
                             <th>Vote</th>
@@ -231,6 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             </td>
                             <td><span class="fw-medium">{{ $cerita->judul }}</span></td>
                             <td>{{ $cerita->kategori->default_title ?? '-' }}</td>
+                            <td>{{ $cerita->positions_index ?? 0 }}</td>
                             <td><span class="badge bg-label-info">{{ $cerita->parts }} chapter</span></td>
                             <td>{{ number_format($cerita->total_read) }}</td>
                             <td>{{ number_format($cerita->total_vote) }}</td>

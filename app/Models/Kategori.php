@@ -8,7 +8,11 @@ class Kategori extends Model
 {
     protected $table = 'mst_kategori';
 
-    protected $fillable = ['default_title'];
+    protected $fillable = ['default_title', 'has_popup'];
+
+    protected $casts = [
+        'has_popup' => 'boolean',
+    ];
 
     public function ceritas()
     {

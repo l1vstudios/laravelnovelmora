@@ -14,10 +14,12 @@ class CeritaAd extends Model
         'after_chapter',
         'placement_position',
         'is_global',
+        'sort_order',
     ];
 
     protected $casts = [
         'is_global' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     public function cerita()
