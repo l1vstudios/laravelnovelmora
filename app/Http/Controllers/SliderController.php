@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Cerita;
 use App\Models\Slider;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SliderController extends Controller
 {
     public function index()
     {
         $sliders = Slider::with('cerita')->latest()->paginate(10);
+
         return view('content.slider.index', compact('sliders'));
     }
 
@@ -25,15 +28,18 @@ class SliderController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'image_url' => 'required|url|max:255',
+            'image_file' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
             'cerita_id' => 'nullable|exists:mst_cerita,id',
-            'status'    => 'required|boolean',
+            'status' => 'required|boolean',
         ]);
 
+        $imagePath = $this->storeImage($request);
+
         Slider::create([
-            'image_url' => $request->image_url,
+            'image_url' => $this->publicImageUrl($imagePath),
+            'image_path' => $imagePath,
             'cerita_id' => $request->cerita_id,
-            'status'    => $request->boolean('status'),
+            'status' => $request->boolean('status'),
         ]);
 
         return redirect()->route('slider.index')->with('success', 'Slider berhasil ditambahkan.');
@@ -58,23 +64,39 @@ class SliderController extends Controller
     public function update(Request $request, Slider $slider)
     {
         $request->validate([
-            'image_url' => 'required|url|max:255',
+            'image_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'cerita_id' => 'nullable|exists:mst_cerita,id',
-            'status'    => 'required|boolean',
+            'status' => 'required|boolean',
         ]);
 
-        $slider->update([
-            'image_url' => $request->image_url,
+        $data = [
             'cerita_id' => $request->cerita_id,
-            'status'    => $request->boolean('status'),
-        ]);
+            'status' => $request->boolean('status'),
+        ];
+
+        if ($request->hasFile('image_file')) {
+            if ($slider->image_path) {
+                Storage::disk('public')->delete($slider->image_path);
+            }
+
+            $imagePath = $this->storeImage($request);
+            $data['image_url'] = $this->publicImageUrl($imagePath);
+            $data['image_path'] = $imagePath;
+        }
+
+        $slider->update($data);
 
         return redirect()->route('slider.index')->with('success', 'Slider berhasil diperbarui.');
     }
 
     public function destroy(Slider $slider)
     {
+        if ($slider->image_path) {
+            Storage::disk('public')->delete($slider->image_path);
+        }
+
         $slider->delete();
+
         return redirect()->route('slider.index')->with('success', 'Slider berhasil dihapus.');
     }
 
@@ -119,12 +141,26 @@ class SliderController extends Controller
 
     private function findSelectedCerita($selectedId): ?Cerita
     {
-        if (!$selectedId) {
+        if (! $selectedId) {
             return null;
         }
 
         return Cerita::query()
             ->select('id', 'judul')
             ->find($selectedId);
+    }
+
+    private function storeImage(Request $request): string
+    {
+        $file = $request->file('image_file');
+        $baseName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) ?: 'slider';
+        $filename = now()->format('YmdHis').'-'.Str::random(8).'-'.$baseName;
+
+        return $file->storeAs('sliders', $filename.'.'.$file->getClientOriginalExtension(), 'public');
+    }
+
+    private function publicImageUrl(string $imagePath): string
+    {
+        return asset('storage/'.ltrim($imagePath, '/'));
     }
 }

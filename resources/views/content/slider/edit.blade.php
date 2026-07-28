@@ -13,17 +13,26 @@
                 @if($errors->any())
                 <div class="alert alert-danger alert-dismissible mb-6"><ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
                 @endif
-                <form action="{{ route('slider.update', $slider) }}" method="POST">
+                <form action="{{ route('slider.update', $slider) }}" method="POST" enctype="multipart/form-data">
                     @csrf @method('PUT')
                     <div class="mb-5">
-                        <label class="form-label">URL Gambar <span class="text-danger">*</span></label>
-                        <input type="url" name="image_url" id="image_url" class="form-control @error('image_url') is-invalid @enderror"
-                            value="{{ old('image_url', $slider->image_url) }}" placeholder="https://...">
-                        @error('image_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <label class="form-label">Upload Gambar Baru</label>
+                        <input type="file" name="image_file" id="image_file" class="form-control @error('image_file') is-invalid @enderror"
+                            accept="image/jpg,image/jpeg,image/png,image/webp">
+                        @error('image_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">Kosongkan jika tidak ingin mengganti gambar.</div>
                     </div>
                     <div class="mb-5">
                         <label class="form-label">Preview</label><br>
                         <img id="img-preview" src="{{ old('image_url', $slider->image_url) }}" alt="Preview" class="rounded" style="max-height:200px;" onerror="this.style.display='none'">
+                    </div>
+                    <div class="mb-5">
+                        <label class="form-label">URL Gambar</label>
+                        <input type="text" class="form-control" value="{{ $slider->image_url }}" readonly>
+                    </div>
+                    <div class="mb-5">
+                        <label class="form-label">Lokasi File</label>
+                        <input type="text" class="form-control" value="{{ $slider->image_path ?: '-' }}" readonly>
                     </div>
                     @include('content.slider._cerita-picker')
                     <div class="mb-5">
@@ -43,10 +52,14 @@
     </div>
 </div>
 <script>
-document.getElementById('image_url').addEventListener('input', function() {
+document.getElementById('image_file').addEventListener('change', function() {
+    const file = this.files[0];
     const preview = document.getElementById('img-preview');
-    preview.src = this.value;
-    preview.style.display = 'block';
+
+    if (file) {
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+    }
 });
 </script>
 @endsection

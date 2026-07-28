@@ -8,7 +8,7 @@ class Slider extends Model
 {
     protected $table = 'mst_sliders';
 
-    protected $fillable = ['image_url', 'cerita_id', 'status'];
+    protected $fillable = ['image_url', 'image_path', 'cerita_id', 'status'];
 
     protected $casts = [
         'status' => 'boolean',

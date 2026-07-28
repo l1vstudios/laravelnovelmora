@@ -14,7 +14,7 @@
             </div>
             <div class="table-responsive text-nowrap">
                 <table class="table table-hover">
-                    <thead><tr><th>#</th><th>Preview</th><th>URL Gambar</th><th>Link Judul</th><th>Status</th><th>Dibuat</th><th>Aksi</th></tr></thead>
+                    <thead><tr><th>#</th><th>Preview</th><th>URL Gambar</th><th>Lokasi File</th><th>Link Judul</th><th>Status</th><th>Dibuat</th><th>Aksi</th></tr></thead>
                     <tbody class="table-border-bottom-0">
                         @forelse($sliders as $slider)
                         <tr>
@@ -29,6 +29,7 @@
                                 @endif
                             </td>
                             <td><small class="text-muted">{{ Str::limit($slider->image_url, 50) }}</small></td>
+                            <td><small class="text-muted">{{ $slider->image_path ? Str::limit($slider->image_path, 40) : '-' }}</small></td>
                             <td>
                                 @if($slider->cerita)
                                     <a href="{{ route('cerita.show', $slider->cerita) }}" class="fw-medium">{{ Str::limit($slider->cerita->judul, 40) }}</a>
@@ -53,7 +54,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="7" class="text-center py-6 text-muted">Belum ada slider. <a href="{{ route('slider.create') }}">Tambah sekarang</a>.</td></tr>
+                        <tr><td colspan="8" class="text-center py-6 text-muted">Belum ada slider. <a href="{{ route('slider.create') }}">Tambah sekarang</a>.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

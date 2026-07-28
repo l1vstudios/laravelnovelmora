@@ -35,7 +35,8 @@
                         <span class="text-muted">Link Judul: -</span>
                     @endif
                 </div>
-                <small class="text-muted d-block">{{ $slider->image_url }}</small>
+                <small class="text-muted d-block text-break">URL: {{ $slider->image_url }}</small>
+                <small class="text-muted d-block text-break">Lokasi File: {{ $slider->image_path ?: '-' }}</small>
                 <small class="text-muted">Dibuat: {{ $slider->created_at ? $slider->created_at->format('d M Y') : '-' }}</small>
             </div>
         </div>

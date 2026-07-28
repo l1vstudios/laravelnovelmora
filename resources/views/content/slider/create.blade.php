@@ -13,14 +13,14 @@
                 @if($errors->any())
                 <div class="alert alert-danger alert-dismissible mb-6"><ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
                 @endif
-                <form action="{{ route('slider.store') }}" method="POST">
+                <form action="{{ route('slider.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="mb-5">
-                        <label class="form-label">URL Gambar <span class="text-danger">*</span></label>
-                        <input type="url" name="image_url" class="form-control @error('image_url') is-invalid @enderror"
-                            value="{{ old('image_url') }}" placeholder="https://..." autofocus>
-                        @error('image_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        <div class="form-text">Masukkan URL gambar yang sudah dihosting (contoh: imgbb, imgur, dll)</div>
+                        <label class="form-label">Upload Gambar <span class="text-danger">*</span></label>
+                        <input type="file" name="image_file" class="form-control @error('image_file') is-invalid @enderror"
+                            accept="image/jpg,image/jpeg,image/png,image/webp" autofocus>
+                        @error('image_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">JPG, PNG, atau WebP. Maks 5MB. URL akan otomatis dibuat lengkap dengan domain.</div>
                     </div>
                     <div id="preview-wrapper" class="mb-5" style="display:none;">
                         <label class="form-label">Preview</label>
@@ -44,11 +44,12 @@
     </div>
 </div>
 <script>
-document.querySelector('[name="image_url"]').addEventListener('input', function() {
-    const url = this.value;
+document.querySelector('[name="image_file"]').addEventListener('change', function() {
+    const file = this.files[0];
     const preview = document.getElementById('img-preview');
     const wrapper = document.getElementById('preview-wrapper');
-    if (url) { preview.src = url; wrapper.style.display = 'block'; }
+
+    if (file) { preview.src = URL.createObjectURL(file); wrapper.style.display = 'block'; }
     else { wrapper.style.display = 'none'; }
 });
 </script>
