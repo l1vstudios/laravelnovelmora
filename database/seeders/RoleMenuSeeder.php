@@ -1,9 +1,12 @@
 <?php
+
 namespace Database\Seeders;
+
 use App\Models\Menu;
-use App\Models\Role;
 use App\Models\RewardType;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
+
 class RoleMenuSeeder extends Seeder
 {
     public function run(): void
@@ -15,15 +18,20 @@ class RoleMenuSeeder extends Seeder
             ['name' => 'Kategori',            'slug' => 'kategori',    'url' => 'kategori',   'icon' => 'bx bx-category',         'group_label' => 'Manajemen Konten', 'urutan' => 4],
             ['name' => 'Slider',              'slug' => 'slider',      'url' => 'slider',     'icon' => 'bx bx-image-alt',        'group_label' => 'Manajemen Konten', 'urutan' => 5],
             ['name' => 'Ads',                 'slug' => 'ads',         'url' => 'ads',        'icon' => 'bx bx-purchase-tag-alt', 'group_label' => 'Manajemen Konten', 'urutan' => 6],
-            ['name' => 'Master Type',         'slug' => 'reward-types','url' => 'reward-types','icon' => 'bx bx-purchase-tag',     'group_label' => 'Master Data Mobile', 'urutan' => 7],
-            ['name' => 'Master Video',        'slug' => 'reward-videos','url' => 'reward-videos','icon' => 'bx bx-video',          'group_label' => 'Master Data Mobile', 'urutan' => 8],
-            ['name' => 'Reward Harian',       'slug' => 'daily-rewards','url' => 'daily-rewards','icon' => 'bx bx-coin-stack',    'group_label' => 'Master Data Mobile', 'urutan' => 9],
-            ['name' => 'Notifikasi',          'slug' => 'notifikasi',  'url' => 'notifikasi', 'icon' => 'bx bx-bell',             'group_label' => 'Master Data Mobile',      'urutan' => 10],
-            ['name' => 'Action',              'slug' => 'action',      'url' => 'action',     'icon' => 'bx bx-list-check',       'group_label' => 'Master Data Mobile',      'urutan' => 11],
-            ['name' => 'Versi Aplikasi',      'slug' => 'versi',       'url' => 'versi',      'icon' => 'bx bx-code-block',       'group_label' => 'Master Data Mobile',      'urutan' => 12],
-            ['name' => 'Manajemen Pengguna',  'slug' => 'pengguna',    'url' => 'pengguna',   'icon' => 'bx bx-group',            'group_label' => 'Pengguna',         'urutan' => 13],
-            ['name' => 'Manajemen Roles',     'slug' => 'roles',       'url' => 'roles',      'icon' => 'bx bx-shield-quarter',   'group_label' => 'Pengguna',         'urutan' => 14],
-            ['name' => 'Profil Saya',         'slug' => 'profile',     'url' => 'profile',    'icon' => 'bx bx-user-circle',      'group_label' => 'Akun',             'urutan' => 15],
+            ['name' => 'Master Type',         'slug' => 'reward-types', 'url' => 'reward-types', 'icon' => 'bx bx-purchase-tag',     'group_label' => 'Master Data Mobile', 'urutan' => 7],
+            ['name' => 'Master Video',        'slug' => 'reward-videos', 'url' => 'reward-videos', 'icon' => 'bx bx-video',          'group_label' => 'Master Data Mobile', 'urutan' => 8],
+            ['name' => 'Reward Harian',       'slug' => 'daily-rewards', 'url' => 'daily-rewards', 'icon' => 'bx bx-coin-stack',    'group_label' => 'Master Data Mobile', 'urutan' => 9],
+            ['name' => 'Pusat Bantuan',       'slug' => 'pusat-bantuan', 'url' => 'pusat-bantuan', 'icon' => 'bx bx-help-circle',    'group_label' => 'Konten Aplikasi',  'urutan' => 10],
+            ['name' => 'FAQ',                 'slug' => 'faqs',        'url' => 'faqs',       'icon' => 'bx bx-question-mark',    'group_label' => 'Konten Aplikasi',  'urutan' => 11],
+            ['name' => 'Syarat Ketentuan',    'slug' => 'syarat-ketentuan', 'url' => 'syarat-ketentuan', 'icon' => 'bx bx-file',     'group_label' => 'Konten Aplikasi',  'urutan' => 12],
+            ['name' => 'Kebijakan Privasi',   'slug' => 'kebijakan-privasi', 'url' => 'kebijakan-privasi', 'icon' => 'bx bx-shield-quarter', 'group_label' => 'Konten Aplikasi', 'urutan' => 13],
+            ['name' => 'Fitur Store',         'slug' => 'fitur-store', 'url' => 'fitur-store', 'icon' => 'bx bx-store',             'group_label' => 'Konten Aplikasi',  'urutan' => 14],
+            ['name' => 'Notifikasi',          'slug' => 'notifikasi',  'url' => 'notifikasi', 'icon' => 'bx bx-bell',             'group_label' => 'Master Data Mobile',      'urutan' => 15],
+            ['name' => 'Action',              'slug' => 'action',      'url' => 'action',     'icon' => 'bx bx-list-check',       'group_label' => 'Master Data Mobile',      'urutan' => 16],
+            ['name' => 'Versi Aplikasi',      'slug' => 'versi',       'url' => 'versi',      'icon' => 'bx bx-code-block',       'group_label' => 'Master Data Mobile',      'urutan' => 17],
+            ['name' => 'Manajemen Pengguna',  'slug' => 'pengguna',    'url' => 'pengguna',   'icon' => 'bx bx-group',            'group_label' => 'Pengguna',         'urutan' => 18],
+            ['name' => 'Manajemen Roles',     'slug' => 'roles',       'url' => 'roles',      'icon' => 'bx bx-shield-quarter',   'group_label' => 'Pengguna',         'urutan' => 19],
+            ['name' => 'Profil Saya',         'slug' => 'profile',     'url' => 'profile',    'icon' => 'bx bx-user-circle',      'group_label' => 'Akun',             'urutan' => 20],
         ];
         foreach ($menus as $menu) {
             Menu::updateOrCreate(['slug' => $menu['slug']], $menu);
@@ -36,7 +44,7 @@ class RoleMenuSeeder extends Seeder
         $sync = [];
         foreach ($allMenuIds as $id) {
             $sync[$id] = [
-                'can_view'   => true,
+                'can_view' => true,
                 'can_insert' => true,
                 'can_update' => true,
                 'can_delete' => true,
@@ -50,7 +58,7 @@ class RoleMenuSeeder extends Seeder
         $viewOnly = [];
         foreach ($allMenuIds as $id) {
             $viewOnly[$id] = [
-                'can_view'   => true,
+                'can_view' => true,
                 'can_insert' => false,
                 'can_update' => false,
                 'can_delete' => false,

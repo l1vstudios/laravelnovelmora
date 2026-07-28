@@ -138,6 +138,97 @@
       ]
     },
     {
+      "menuHeader": "Konten Aplikasi"
+    },
+    {
+      "name": "Pusat Bantuan",
+      "icon": "menu-icon icon-base bx bx-help-circle",
+      "slug": "pusat-bantuan",
+      "submenu": [
+        {
+          "url": "pusat-bantuan",
+          "name": "Semua Bantuan",
+          "slug": "pusat-bantuan-index"
+        },
+        {
+          "url": "pusat-bantuan/create",
+          "name": "Tambah Bantuan",
+          "slug": "pusat-bantuan-create"
+        }
+      ]
+    },
+    {
+      "name": "FAQ",
+      "icon": "menu-icon icon-base bx bx-question-mark",
+      "slug": "faqs",
+      "submenu": [
+        {
+          "url": "faqs",
+          "name": "Semua FAQ",
+          "slug": "faqs-index"
+        },
+        {
+          "url": "faqs/create",
+          "name": "Tambah FAQ",
+          "slug": "faqs-create"
+        }
+      ]
+    },
+    {
+      "name": "Syarat Ketentuan",
+      "icon": "menu-icon icon-base bx bx-file",
+      "slug": "syarat-ketentuan",
+      "submenu": [
+        {
+          "url": "syarat-ketentuan",
+          "name": "Semua Syarat",
+          "slug": "syarat-ketentuan-index"
+        },
+        {
+          "url": "syarat-ketentuan/create",
+          "name": "Tambah Syarat",
+          "slug": "syarat-ketentuan-create"
+        }
+      ]
+    },
+    {
+      "name": "Kebijakan Privasi",
+      "icon": "menu-icon icon-base bx bx-shield-quarter",
+      "slug": "kebijakan-privasi",
+      "submenu": [
+        {
+          "url": "kebijakan-privasi",
+          "name": "Semua Kebijakan",
+          "slug": "kebijakan-privasi-index"
+        },
+        {
+          "url": "kebijakan-privasi/create",
+          "name": "Tambah Kebijakan",
+          "slug": "kebijakan-privasi-create"
+        }
+      ]
+    },
+    {
+      "name": "Fitur Store",
+      "icon": "menu-icon icon-base bx bx-store",
+      "slug": "fitur-store",
+      "submenu": [
+        {
+          "url": "fitur-store",
+          "name": "Semua Fitur",
+          "slug": "fitur-store-index"
+        },
+        {
+          "url": "fitur-store/create",
+          "name": "Tambah Fitur",
+          "slug": "fitur-store-create"
+        }
+      ]
+    },
+    {
+      "menuHeader": "Master Data Mobile"
+    },
+    {
       "name": "Notifikasi",
       "icon": "menu-icon icon-base bx bx-bell",
       "slug": "notifikasi",

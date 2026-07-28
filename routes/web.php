@@ -5,16 +5,21 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CeritaController;
 use App\Http\Controllers\DailyRewardController;
+use App\Http\Controllers\FaqController;
+use App\Http\Controllers\FiturStoreController;
 use App\Http\Controllers\GeneralController;
 use App\Http\Controllers\KategoriController;
+use App\Http\Controllers\KebijakanPrivasiController;
 use App\Http\Controllers\MstActionController;
 use App\Http\Controllers\MstUserController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PusatBantuanController;
 use App\Http\Controllers\RewardTypeController;
 use App\Http\Controllers\RewardVideoController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SliderController;
+use App\Http\Controllers\SyaratKetentuanController;
 use App\Http\Controllers\VersiController;
 use Illuminate\Support\Facades\Route;
 
@@ -71,6 +76,21 @@ Route::middleware('auth')->group(function () {
             ->parameters(['daily-rewards' => 'dailyReward']);
         Route::post('daily-rewards/{dailyReward}/claim', [DailyRewardController::class, 'claim'])
             ->name('daily-rewards.claim');
+
+        Route::resource('pusat-bantuan', PusatBantuanController::class)
+            ->parameters(['pusat-bantuan' => 'pusatBantuan']);
+
+        Route::resource('faqs', FaqController::class)
+            ->parameters(['faqs' => 'faq']);
+
+        Route::resource('syarat-ketentuan', SyaratKetentuanController::class)
+            ->parameters(['syarat-ketentuan' => 'syaratKetentuan']);
+
+        Route::resource('kebijakan-privasi', KebijakanPrivasiController::class)
+            ->parameters(['kebijakan-privasi' => 'kebijakanPrivasi']);
+
+        Route::resource('fitur-store', FiturStoreController::class)
+            ->parameters(['fitur-store' => 'fiturStore']);
 
         // Master Data
         Route::resource('notifikasi', NotifikasiController::class)
