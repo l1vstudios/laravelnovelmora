@@ -41,13 +41,19 @@
             @php($selectedForDay = collect($oldSchedules[$dayNumber] ?? [])->map(fn ($id) => (string) $id)->all())
             <div class="col-md-6">
                 <label class="form-label">{{ $dayLabel }}</label>
-                <select name="video_schedules[{{ $dayNumber }}][]" class="form-select js-video-schedule" multiple size="4">
-                    @foreach($rewardVideos as $video)
-                        <option value="{{ $video->id }}" data-video-url="{{ $video->video_target_url }}" {{ in_array((string) $video->id, $selectedForDay, true) ? 'selected' : '' }}>
-                            {{ $video->title }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="dropdown js-video-schedule">
+                    <button class="btn btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center justify-content-between text-start" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                        <span class="js-video-schedule-label text-truncate">Tidak ada video</span>
+                    </button>
+                    <div class="dropdown-menu w-100 p-2" style="max-height:260px;overflow:auto;">
+                        @foreach($rewardVideos as $video)
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0">
+                                <input class="form-check-input m-0 js-video-schedule-input" type="checkbox" name="video_schedules[{{ $dayNumber }}][]" value="{{ $video->id }}" data-video-url="{{ $video->video_target_url }}" data-video-title="{{ $video->title }}" {{ in_array((string) $video->id, $selectedForDay, true) ? 'checked' : '' }}>
+                                <span class="text-truncate">{{ $video->title }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
             </div>
             @endforeach
         </div>
@@ -65,25 +71,40 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const targetInput = document.getElementById('target_url');
-    const videoSelects = document.querySelectorAll('.js-video-schedule');
+    const videoDropdowns = document.querySelectorAll('.js-video-schedule');
 
-    const selectedUrls = (select) => {
-        return Array.from(select.selectedOptions)
-            .map((option) => option.dataset.videoUrl)
+    const checkedInputs = (dropdown) => {
+        return Array.from(dropdown.querySelectorAll('.js-video-schedule-input:checked'));
+    };
+
+    const selectedUrls = (dropdown) => {
+        return checkedInputs(dropdown)
+            .map((input) => input.dataset.videoUrl)
             .filter(Boolean);
     };
 
     const firstSelectedVideoUrl = () => {
-        for (const select of videoSelects) {
-            const urls = selectedUrls(select);
+        for (const dropdown of videoDropdowns) {
+            const urls = selectedUrls(dropdown);
             if (urls.length) return urls[0];
         }
 
         return '';
     };
 
-    videoSelects.forEach((select) => {
-        select.addEventListener('change', function () {
+    const updateDropdownLabel = (dropdown) => {
+        const label = dropdown.querySelector('.js-video-schedule-label');
+        const titles = checkedInputs(dropdown).map((input) => input.dataset.videoTitle).filter(Boolean);
+
+        label.textContent = titles.length ? titles.join(', ') : 'Tidak ada video';
+        label.title = label.textContent;
+    };
+
+    videoDropdowns.forEach((dropdown) => {
+        updateDropdownLabel(dropdown);
+
+        dropdown.addEventListener('change', function () {
+            updateDropdownLabel(this);
             const selectedUrl = selectedUrls(this)[0];
             targetInput.value = selectedUrl || firstSelectedVideoUrl() || targetInput.value;
         });
