@@ -36,6 +36,7 @@ Route::middleware('auth')->group(function () {
 
     // Dashboard — always accessible
     Route::get('/', [GeneralController::class, 'analytics'])->name('dashboard-analytics');
+    Route::get('/dashboard/users', [GeneralController::class, 'mobileUsers'])->name('dashboard.mobile-users');
 
     // Profile — always accessible
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');

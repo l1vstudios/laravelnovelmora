@@ -43,13 +43,13 @@
       </div>
     </div>
     <div class="col-sm-6 col-xl-3">
-      <div class="card h-100">
+      <div class="card h-100 position-relative">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between mb-4">
             <span class="badge bg-label-success rounded p-2">
               <i class="icon-base bx bx-group icon-md"></i>
             </span>
-            <a href="{{ route('pengguna.index') }}" class="text-muted" style="font-size:.75rem;">Lihat semua →</a>
+            <a href="{{ route('dashboard.mobile-users') }}" class="text-muted stretched-link" style="font-size:.75rem;">Lihat semua →</a>
           </div>
           <h5 class="mb-1">{{ number_format($stats['pengguna']) }}</h5>
           <small class="text-muted">Total Pengguna BACAAN</small>
