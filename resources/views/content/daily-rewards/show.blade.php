@@ -30,8 +30,7 @@
                     <thead><tr><th>Hari</th><th>Video</th></tr></thead>
                     <tbody>
                         @foreach($days as $dayNumber => $dayLabel)
-                        @php($schedule = $dailyReward->videoSchedules->firstWhere('day_of_week', $dayNumber))
-                        <tr><td>{{ $dayLabel }}</td><td>{{ $schedule?->video?->title ?? '-' }}</td></tr>
+                        <tr><td>{{ $dayLabel }}</td><td>{{ $dailyReward->videosForDay($dayNumber)->pluck('title')->join(', ') ?: '-' }}</td></tr>
                         @endforeach
                     </tbody>
                 </table>

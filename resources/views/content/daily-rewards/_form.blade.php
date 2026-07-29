@@ -1,5 +1,9 @@
 @php
-    $selectedSchedules = $dailyReward?->videoSchedules?->pluck('reward_video_id', 'day_of_week')->toArray() ?? [];
+    $selectedSchedules = $dailyReward?->videoSchedules
+        ?->groupBy('day_of_week')
+        ->map(fn ($schedules) => $schedules->pluck('reward_video_id')->map(fn ($id) => (string) $id)->all())
+        ->toArray() ?? [];
+    $oldSchedules = old('video_schedules', $selectedSchedules);
 @endphp
 
 <div class="row g-5">
@@ -34,12 +38,12 @@
         <h6 class="mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em;">Jadwal Video Nonton Iklan</h6>
         <div class="row g-4">
             @foreach($days as $dayNumber => $dayLabel)
+            @php($selectedForDay = collect($oldSchedules[$dayNumber] ?? [])->map(fn ($id) => (string) $id)->all())
             <div class="col-md-6">
                 <label class="form-label">{{ $dayLabel }}</label>
-                <select name="video_schedules[{{ $dayNumber }}]" class="form-select js-video-schedule">
-                    <option value="">-- Tidak ada video --</option>
+                <select name="video_schedules[{{ $dayNumber }}][]" class="form-select js-video-schedule" multiple size="4">
                     @foreach($rewardVideos as $video)
-                        <option value="{{ $video->id }}" data-video-url="{{ $video->video_target_url }}" {{ old('video_schedules.' . $dayNumber, $selectedSchedules[$dayNumber] ?? '') == $video->id ? 'selected' : '' }}>
+                        <option value="{{ $video->id }}" data-video-url="{{ $video->video_target_url }}" {{ in_array((string) $video->id, $selectedForDay, true) ? 'selected' : '' }}>
                             {{ $video->title }}
                         </option>
                     @endforeach
@@ -63,10 +67,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const targetInput = document.getElementById('target_url');
     const videoSelects = document.querySelectorAll('.js-video-schedule');
 
+    const selectedUrls = (select) => {
+        return Array.from(select.selectedOptions)
+            .map((option) => option.dataset.videoUrl)
+            .filter(Boolean);
+    };
+
     const firstSelectedVideoUrl = () => {
         for (const select of videoSelects) {
-            const url = select.selectedOptions[0]?.dataset.videoUrl;
-            if (url) return url;
+            const urls = selectedUrls(select);
+            if (urls.length) return urls[0];
         }
 
         return '';
@@ -74,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     videoSelects.forEach((select) => {
         select.addEventListener('change', function () {
-            const selectedUrl = this.selectedOptions[0]?.dataset.videoUrl;
+            const selectedUrl = selectedUrls(this)[0];
             targetInput.value = selectedUrl || firstSelectedVideoUrl() || targetInput.value;
         });
     });

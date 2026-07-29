@@ -6,12 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class DailyRewardClaim extends Model
 {
+    public const DAILY_CLAIM_KEY = 'daily';
+
     protected $table = 'mst_daily_reward_claims';
 
     protected $fillable = [
         'user_id',
         'daily_reward_id',
         'reward_video_id',
+        'claim_key',
         'claim_date',
         'coin_reward',
     ];
@@ -33,5 +36,10 @@ class DailyRewardClaim extends Model
     public function video()
     {
         return $this->belongsTo(RewardVideo::class, 'reward_video_id');
+    }
+
+    public static function videoClaimKey(int $videoId): string
+    {
+        return 'video:' . $videoId;
     }
 }

@@ -47,7 +47,7 @@
                             <td><span class="fw-medium">{{ $reward->title }}</span>@if($reward->target_url)<small class="text-muted d-block">{{ Str::limit($reward->target_url, 48) }}</small>@endif</td>
                             <td><span class="badge bg-label-info">{{ $reward->type->label ?? '-' }}</span></td>
                             <td><span class="badge bg-label-warning">{{ number_format($reward->coin_reward) }} koin</span></td>
-                            <td>{{ $reward->videoForDay($today)?->title ?? '-' }}</td>
+                            <td>{{ $reward->videosForDay($today)->pluck('title')->join(', ') ?: '-' }}</td>
                             <td>@if($reward->status)<span class="badge bg-label-success">Aktif</span>@else<span class="badge bg-label-secondary">Nonaktif</span>@endif</td>
                             <td><span class="badge bg-label-primary">{{ $reward->claims_count }}</span></td>
                             <td>

@@ -7,6 +7,7 @@ use App\Models\DailyRewardClaim;
 use App\Models\DailyRewardVideoSchedule;
 use App\Models\RewardType;
 use App\Models\RewardVideo;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -110,23 +111,48 @@ class DailyRewardController extends Controller
         }
 
         $dailyReward->load(['type', 'videoSchedules.video']);
-        $video = $dailyReward->type?->name === 'nonton_iklan'
-            ? $dailyReward->videoForDay($dayOfWeek)
-            : null;
+        $isVideoAdReward = $dailyReward->type?->name === 'nonton_iklan';
+        $video = null;
+        $claimKey = DailyRewardClaim::DAILY_CLAIM_KEY;
+
+        if ($isVideoAdReward) {
+            $claimedVideoIds = DailyRewardClaim::where('user_id', $user->id)
+                ->where('daily_reward_id', $dailyReward->id)
+                ->whereDate('claim_date', $today)
+                ->whereNotNull('reward_video_id')
+                ->pluck('reward_video_id')
+                ->map(fn ($videoId): int => (int) $videoId)
+                ->all();
+
+            $videosForToday = $dailyReward->videosForDay($dayOfWeek);
+
+            if ($videosForToday->isEmpty()) {
+                return back()->with('error', 'Belum ada video iklan untuk hari ini.');
+            }
+
+            $video = $videosForToday->first(fn (RewardVideo $video): bool => !in_array($video->id, $claimedVideoIds, true));
+
+            if (!$video) {
+                return back()->with('error', 'Semua video iklan hari ini sudah dikerjakan. Coba lagi besok.');
+            }
+
+            $claimKey = DailyRewardClaim::videoClaimKey($video->id);
+        }
 
         try {
-            DB::transaction(function () use ($user, $dailyReward, $today, $video) {
+            DB::transaction(function () use ($user, $dailyReward, $today, $video, $claimKey) {
                 DailyRewardClaim::create([
                     'user_id'         => $user->id,
                     'daily_reward_id' => $dailyReward->id,
                     'reward_video_id' => $video?->id,
+                    'claim_key'       => $claimKey,
                     'claim_date'      => $today,
                     'coin_reward'     => $dailyReward->coin_reward,
                 ]);
 
                 $user->increment('coin_balance', $dailyReward->coin_reward);
             });
-        } catch (\Illuminate\Database\QueryException) {
+        } catch (QueryException) {
             return back()->with('error', 'Reward ini sudah dikerjakan hari ini. Coba lagi besok.');
         }
 
@@ -142,7 +168,8 @@ class DailyRewardController extends Controller
             'target_url'           => 'nullable|url|max:2048',
             'status'               => 'required|boolean',
             'video_schedules'      => 'nullable|array',
-            'video_schedules.*'    => 'nullable|integer|exists:mst_reward_videos,id',
+            'video_schedules.*'    => 'nullable|array',
+            'video_schedules.*.*'  => 'nullable|integer|exists:mst_reward_videos,id',
         ], [
             'coin_reward.max' => 'Maaf, angka yang dimasukkan terlalu besar.',
         ]);
@@ -163,17 +190,19 @@ class DailyRewardController extends Controller
         ksort($videoSchedules);
 
         foreach ($videoSchedules as $day => $videoId) {
-            if (!$videoId) {
-                continue;
-            }
-
             $dayNumber = (int) $day;
 
             if ($dayNumber < 1 || $dayNumber > 7) {
                 continue;
             }
 
-            return RewardVideo::find((int) $videoId)?->video_target_url;
+            foreach ((array) $videoId as $id) {
+                if (!$id) {
+                    continue;
+                }
+
+                return RewardVideo::find((int) $id)?->video_target_url;
+            }
         }
 
         return null;
@@ -186,24 +215,22 @@ class DailyRewardController extends Controller
         $rows = [];
         $now = now();
 
-        foreach ($videoSchedules as $day => $videoId) {
-            if (!$videoId) {
-                continue;
-            }
-
+        foreach ($videoSchedules as $day => $videoIds) {
             $dayNumber = (int) $day;
 
             if ($dayNumber < 1 || $dayNumber > 7) {
                 continue;
             }
 
-            $rows[] = [
-                'daily_reward_id' => $dailyReward->id,
-                'reward_video_id' => (int) $videoId,
-                'day_of_week'     => $dayNumber,
-                'created_at'      => $now,
-                'updated_at'      => $now,
-            ];
+            foreach (array_unique(array_filter((array) $videoIds)) as $videoId) {
+                $rows[] = [
+                    'daily_reward_id' => $dailyReward->id,
+                    'reward_video_id' => (int) $videoId,
+                    'day_of_week'     => $dayNumber,
+                    'created_at'      => $now,
+                    'updated_at'      => $now,
+                ];
+            }
         }
 
         if ($rows) {

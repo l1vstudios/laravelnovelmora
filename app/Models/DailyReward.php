@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class DailyReward extends Model
 {
@@ -43,8 +44,15 @@ class DailyReward extends Model
 
     public function videoForDay(int $dayOfWeek): ?RewardVideo
     {
+        return $this->videosForDay($dayOfWeek)->first();
+    }
+
+    public function videosForDay(int $dayOfWeek): Collection
+    {
         return $this->videoSchedules
-            ->firstWhere('day_of_week', $dayOfWeek)
-            ?->video;
+            ->where('day_of_week', $dayOfWeek)
+            ->pluck('video')
+            ->filter()
+            ->values();
     }
 }
