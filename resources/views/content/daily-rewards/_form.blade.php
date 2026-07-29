@@ -6,6 +6,26 @@
     $oldSchedules = old('video_schedules', $selectedSchedules);
 @endphp
 
+@section('page-style')
+<style>
+.daily-reward-video-menu .dropdown-item {
+    border-radius: .375rem;
+    transition: background-color .15s ease, color .15s ease;
+}
+
+.daily-reward-video-menu .dropdown-item:hover,
+.daily-reward-video-menu .dropdown-item:focus {
+    background-color: rgba(105, 108, 255, .08);
+    color: #566a7f;
+}
+
+.daily-reward-video-menu .dropdown-item:has(.js-video-schedule-input:checked) {
+    background-color: rgba(105, 108, 255, .12);
+    color: #4f52d9;
+}
+</style>
+@endsection
+
 <div class="row g-5">
     <div class="col-md-8">
         <label class="form-label">Judul Reward <span class="text-danger">*</span></label>
@@ -45,7 +65,7 @@
                     <button class="btn btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center justify-content-between text-start" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                         <span class="js-video-schedule-label text-truncate">Tidak ada video</span>
                     </button>
-                    <div class="dropdown-menu w-100 p-2" style="max-height:260px;overflow:auto;">
+                    <div class="dropdown-menu daily-reward-video-menu w-100 p-2" style="max-height:260px;overflow:auto;">
                         @foreach($rewardVideos as $video)
                             <label class="dropdown-item d-flex align-items-center gap-2 mb-0">
                                 <input class="form-check-input m-0 js-video-schedule-input" type="checkbox" name="video_schedules[{{ $dayNumber }}][]" value="{{ $video->id }}" data-video-url="{{ $video->video_target_url }}" data-video-title="{{ $video->title }}" {{ in_array((string) $video->id, $selectedForDay, true) ? 'checked' : '' }}>
