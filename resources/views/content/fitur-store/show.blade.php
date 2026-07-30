@@ -1,6 +1,10 @@
 @extends('layouts/contentNavbarLayout')
 @section('title', 'Detail Fitur Store')
 
+@php
+    $konten = $fiturStore->konten ?? [];
+@endphp
+
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-9">
@@ -12,8 +16,10 @@
             <div class="card-body">
                 <small class="text-muted d-block mb-1">Status</small>
                 @if($fiturStore->status)<span class="badge bg-label-success">Aktif</span>@else<span class="badge bg-label-secondary">Nonaktif</span>@endif
-                <small class="text-muted d-block mt-5 mb-2">Konten</small>
-                <pre class="bg-label-secondary rounded p-4 mb-0 text-break"><code>{{ json_encode($fiturStore->konten, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                <small class="text-muted d-block mt-5 mb-1">Judul</small>
+                <div class="fw-medium">{{ data_get($konten, 'title', '-') }}</div>
+                <small class="text-muted d-block mt-5 mb-1">Deskripsi</small>
+                <div class="text-break">{!! nl2br(e(data_get($konten, 'description', '-'))) !!}</div>
             </div>
         </div>
     </div>

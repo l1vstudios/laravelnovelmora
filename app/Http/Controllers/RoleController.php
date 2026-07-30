@@ -8,9 +8,18 @@ use Illuminate\Http\Request;
 
 class RoleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $roles = Role::withCount('users')->latest()->get();
+        $query = Role::withCount('users');
+        $this->applyGridSort($query, $request, Role::class, 'created_at', 'desc', [
+            'nama_role' => 'name',
+            'deskripsi' => 'description',
+            'tipe' => 'is_super_admin',
+            'pengguna' => 'users_count',
+            'users_count' => 'users_count',
+        ]);
+
+        $roles = $query->get();
         return view('content.roles.index', compact('roles'));
     }
 

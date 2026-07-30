@@ -10,9 +10,16 @@ use Illuminate\Support\Str;
 
 class SliderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $sliders = Slider::with('cerita')->latest()->paginate(10);
+        $query = Slider::with('cerita');
+        $this->applyGridSort($query, $request, Slider::class, 'created_at', 'desc', [
+            'url_gambar' => 'image_url',
+            'lokasi_file' => 'image_path',
+            'link_judul' => 'cerita_id',
+        ]);
+
+        $sliders = $query->paginate(10)->withQueryString();
 
         return view('content.slider.index', compact('sliders'));
     }

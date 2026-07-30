@@ -42,7 +42,7 @@
             </h6>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
+            <table class="table table-hover mb-0 align-middle" data-grid-sortable="false">
                 <thead class="table-light">
                     <tr>
                         <th style="width:35%">Menu</th>

@@ -17,6 +17,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const bulkActionInputs = document.querySelectorAll('input[name="bulk_action"]');
     const bulkSubmitButton = document.getElementById('bulk-pilihan-submit');
     const bulkPilihanModal = document.getElementById('bulk-pilihan-modal');
+    const categoryDropdown = document.getElementById('cerita-category-dropdown');
+    const categoryToggle = document.getElementById('cerita-category-toggle');
+    const categoryInput = document.getElementById('cerita-category-input');
+    const categorySearch = document.getElementById('cerita-category-search');
+    const categoryLabel = document.getElementById('cerita-category-label');
+    const categoryItems = document.querySelectorAll('[data-category-option]');
     const hasErrors = @json($errors->any());
     const oldFormType = @json(old('form_type'));
 
@@ -88,6 +94,19 @@ document.addEventListener('DOMContentLoaded', function () {
         bulkSubmitButton.classList.toggle('btn-primary', selectedAction !== 'disable');
     }
 
+    function filterCategoryOptions() {
+        if (!categorySearch) {
+            return;
+        }
+
+        const needle = categorySearch.value.trim().toLowerCase();
+
+        categoryItems.forEach((item) => {
+            const label = item.dataset.categoryLabel || '';
+            item.classList.toggle('d-none', needle && !label.includes(needle));
+        });
+    }
+
     if (scopeAll && storySelect) {
         scopeAll.addEventListener('change', () => syncStoryPicker(scopeAll, storySelect, storySearch));
         if (storySearch) {
@@ -109,6 +128,35 @@ document.addEventListener('DOMContentLoaded', function () {
         syncStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch);
         filterStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch);
         syncBulkButton();
+    }
+
+    if (categoryDropdown && categoryInput && categoryLabel) {
+        categoryItems.forEach((item) => {
+            item.addEventListener('click', () => {
+                categoryInput.value = item.dataset.categoryValue || '';
+                categoryLabel.textContent = item.dataset.categoryText || 'Semua Kategori';
+                categoryItems.forEach((option) => option.classList.remove('active'));
+                item.classList.toggle('active', Boolean(item.dataset.categoryValue));
+
+                if (categoryToggle && window.bootstrap) {
+                    window.bootstrap.Dropdown.getOrCreateInstance(categoryToggle).hide();
+                }
+            });
+        });
+
+        if (categorySearch) {
+            categorySearch.addEventListener('click', (event) => event.stopPropagation());
+            categorySearch.addEventListener('input', filterCategoryOptions);
+            categoryToggle?.addEventListener('shown.bs.dropdown', () => {
+                categorySearch.focus();
+                categorySearch.select();
+                filterCategoryOptions();
+            });
+            categoryToggle?.addEventListener('hidden.bs.dropdown', () => {
+                categorySearch.value = '';
+                filterCategoryOptions();
+            });
+        }
     }
 
     if (hasErrors && oldFormType === 'global-lock' && globalLockModal && window.bootstrap) {
@@ -185,13 +233,43 @@ document.addEventListener('DOMContentLoaded', function () {
                         </select>
                     </div>
                     <div class="col-auto">
+                        @php
+                            $selectedKategori = $kategoris->firstWhere('id', (int) request('kategori_id'));
+                        @endphp
+                        <label class="form-label mb-1 text-muted" style="font-size:.75rem;">Kategori</label>
+                        <input type="hidden" name="kategori_id" id="cerita-category-input" value="{{ request('kategori_id') }}">
+                        <div class="dropdown" id="cerita-category-dropdown">
+                            <button type="button" id="cerita-category-toggle" class="btn btn-sm btn-outline-secondary dropdown-toggle text-start d-flex align-items-center justify-content-between"
+                                data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="min-width:210px;">
+                                <span id="cerita-category-label">{{ $selectedKategori?->default_title ?? 'Semua Kategori' }}</span>
+                            </button>
+                            <div class="dropdown-menu p-2" style="min-width:260px;max-height:320px;overflow:auto;">
+                                <input type="search" id="cerita-category-search" class="form-control form-control-sm mb-2"
+                                    placeholder="Cari kategori..." autocomplete="off">
+                                <button type="button" class="dropdown-item rounded"
+                                    data-category-option data-category-value="" data-category-text="Semua Kategori" data-category-label="semua kategori">
+                                    Semua Kategori
+                                </button>
+                                @foreach($kategoris as $kategori)
+                                    <button type="button" class="dropdown-item rounded {{ (string) request('kategori_id') === (string) $kategori->id ? 'active' : '' }}"
+                                        data-category-option
+                                        data-category-value="{{ $kategori->id }}"
+                                        data-category-text="{{ $kategori->default_title }}"
+                                        data-category-label="{{ Str::lower($kategori->default_title) }}">
+                                        {{ $kategori->default_title }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
                         <label class="form-label mb-1 text-muted" style="font-size:.75rem;">Judul Cerita</label>
                         <input type="search" name="judul" class="form-control form-control-sm"
                             value="{{ request('judul') }}" placeholder="Cari judul..." style="min-width:220px;">
                     </div>
                     <div class="col-auto d-flex gap-2">
                         <button type="submit" class="btn btn-sm btn-primary"><i class="icon-base bx bx-filter me-1"></i> Filter</button>
-                        @if(request()->hasAny(['status','recomendation','wajib_dibaca','judul']))
+                        @if(request()->hasAny(['status','recomendation','wajib_dibaca','kategori_id','judul']))
                         <a href="{{ route('cerita.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
                         @endif
                     </div>

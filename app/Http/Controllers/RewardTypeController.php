@@ -10,11 +10,16 @@ class RewardTypeController extends Controller
 {
     public function index(Request $request)
     {
-        $query = RewardType::withCount('dailyRewards')->latest();
+        $query = RewardType::withCount('dailyRewards');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status === '1');
         }
+
+        $this->applyGridSort($query, $request, RewardType::class, 'created_at', 'desc', [
+            'reward' => 'daily_rewards_count',
+            'daily_rewards_count' => 'daily_rewards_count',
+        ]);
 
         $rewardTypes = $query->paginate(10)->withQueryString();
 

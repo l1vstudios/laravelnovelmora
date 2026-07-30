@@ -7,9 +7,15 @@ use Illuminate\Http\Request;
 
 class NotifikasiController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $notifikasis = Notifikasi::latest()->paginate(10);
+        $query = Notifikasi::query();
+        $this->applyGridSort($query, $request, Notifikasi::class, 'created_at', 'desc', [
+            'judul' => 'title',
+            'pesan' => 'message',
+        ]);
+
+        $notifikasis = $query->paginate(10)->withQueryString();
         return view('content.notifikasi.index', compact('notifikasis'));
     }
 

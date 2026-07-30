@@ -1,6 +1,10 @@
 @extends('layouts/contentNavbarLayout')
 @section('title', 'Edit Fitur Store')
 
+@php
+    $konten = $fiturStore->konten ?? [];
+@endphp
+
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-8">
@@ -16,9 +20,15 @@
                 <form action="{{ route('fitur-store.update', $fiturStore) }}" method="POST">
                     @csrf @method('PUT')
                     <div class="mb-5">
-                        <label class="form-label">Konten JSON <span class="text-danger">*</span></label>
-                        <textarea name="konten" rows="12" class="form-control font-monospace @error('konten') is-invalid @enderror">{{ old('konten', json_encode($fiturStore->konten, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) }}</textarea>
-                        @error('konten')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <label class="form-label">Judul <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control @error('title') is-invalid @enderror"
+                            value="{{ old('title', data_get($konten, 'title')) }}" autofocus>
+                        @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="mb-5">
+                        <label class="form-label">Deskripsi</label>
+                        <textarea name="description" rows="8" class="form-control @error('description') is-invalid @enderror">{{ old('description', data_get($konten, 'description')) }}</textarea>
+                        @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="mb-5">
                         <div class="form-check form-switch">

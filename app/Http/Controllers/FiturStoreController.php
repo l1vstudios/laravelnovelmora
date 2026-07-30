@@ -4,17 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\FiturStore;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class FiturStoreController extends Controller
 {
     public function index(Request $request)
     {
-        $query = FiturStore::latest();
+        $query = FiturStore::query();
 
         if ($request->filled('status')) {
             $query->where('status', $request->status === '1');
         }
+
+        $this->applyGridSort($query, $request, FiturStore::class);
 
         $fiturStores = $query->paginate(10)->withQueryString();
 
@@ -23,16 +24,25 @@ class FiturStoreController extends Controller
 
     public function create()
     {
-        return view('content.fitur-store.create');
+        $fiturStore = FiturStore::query()->oldest('id')->first();
+
+        return view('content.fitur-store.create', compact('fiturStore'));
     }
 
     public function store(Request $request)
     {
         $data = $this->validatedData($request);
+        $fiturStore = FiturStore::query()->oldest('id')->first();
+
+        if ($fiturStore) {
+            $fiturStore->update($data);
+
+            return redirect()->route('fitur-store.index')->with('success', 'Fitur store berhasil diperbarui.');
+        }
 
         FiturStore::create($data);
 
-        return redirect()->route('fitur-store.index')->with('success', 'Fitur store berhasil ditambahkan.');
+        return redirect()->route('fitur-store.index')->with('success', 'Fitur store berhasil disimpan.');
     }
 
     public function show(FiturStore $fiturStore)
@@ -64,20 +74,16 @@ class FiturStoreController extends Controller
     private function validatedData(Request $request): array
     {
         $data = $request->validate([
-            'konten' => 'required|string',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'status' => 'nullable|boolean',
         ]);
 
-        $decoded = json_decode($data['konten'], true);
-
-        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
-            throw ValidationException::withMessages([
-                'konten' => 'Konten harus berupa JSON object atau array yang valid.',
-            ]);
-        }
-
         return [
-            'konten' => $decoded,
+            'konten' => [
+                'title' => $data['title'],
+                'description' => $data['description'] ?? '',
+            ],
             'status' => $request->boolean('status'),
         ];
     }

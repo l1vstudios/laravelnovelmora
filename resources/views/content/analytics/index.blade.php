@@ -229,13 +229,13 @@
           <tr>
             <th>
             <th>Judul</th>
-            <th><a href="{{ sortUrl('total_read', $sortBy, $sortDir, $baseQuery) }}"
+            <th data-sort-column="total_read"><a href="{{ sortUrl('total_read', $sortBy, $sortDir, $baseQuery) }}"
                 class="text-body text-decoration-none">Dibaca{!! sortIcon('total_read', $sortBy, $sortDir) !!}</a></th>
-            <th><a href="{{ sortUrl('total_vote', $sortBy, $sortDir, $baseQuery) }}"
+            <th data-sort-column="total_vote"><a href="{{ sortUrl('total_vote', $sortBy, $sortDir, $baseQuery) }}"
                 class="text-body text-decoration-none">Vote{!! sortIcon('total_vote', $sortBy, $sortDir) !!}</a></th>
-            <th><a href="{{ sortUrl('total_share', $sortBy, $sortDir, $baseQuery) }}"
+            <th data-sort-column="total_share"><a href="{{ sortUrl('total_share', $sortBy, $sortDir, $baseQuery) }}"
                 class="text-body text-decoration-none">Share{!! sortIcon('total_share', $sortBy, $sortDir) !!}</a></th>
-            <th><a href="{{ sortUrl('engagement', $sortBy, $sortDir, $baseQuery) }}"
+            <th data-sort-column="engagement"><a href="{{ sortUrl('engagement', $sortBy, $sortDir, $baseQuery) }}"
                 class="text-body text-decoration-none">Engagement Rate{!! sortIcon('engagement', $sortBy, $sortDir) !!}</a></th>
             <th></th>
           </tr>
@@ -282,7 +282,7 @@
         </div>
         <div class="modal-body p-0">
           <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover mb-0" data-grid-sortable="false">
               <thead>
                 <tr>
                   <th>

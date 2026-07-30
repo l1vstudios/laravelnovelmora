@@ -11,10 +11,12 @@ class AnalyticsController extends Controller
 {
   public function index(Request $request)
   {
-    $sortBy = in_array($request->sort_by, ['total_read', 'total_vote', 'total_share', 'engagement'])
-      ? $request->sort_by
+    $requestedSort = $request->query('sort', $request->query('sort_by'));
+    $sortBy = in_array($requestedSort, ['judul', 'parts', 'status', 'total_read', 'total_vote', 'total_share', 'engagement'])
+      ? $requestedSort
       : 'total_read';
-    $sortDir = $request->sort_dir === 'asc' ? 'asc' : 'desc';
+    $requestedDirection = $request->query('direction', $request->query('sort_dir'));
+    $sortDir = $requestedDirection === 'asc' ? 'asc' : 'desc';
     $year = $request->year;
     $month = $request->month;
     $week = $request->week;

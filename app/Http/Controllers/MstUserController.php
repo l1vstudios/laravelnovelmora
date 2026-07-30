@@ -9,9 +9,15 @@ use Illuminate\Support\Facades\Hash;
 
 class MstUserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('role')->latest()->paginate(10);
+        $query = User::with('role');
+        $this->applyGridSort($query, $request, User::class, 'created_at', 'desc', [
+            'role' => 'role_id',
+            'bergabung' => 'created_at',
+        ]);
+
+        $users = $query->paginate(10)->withQueryString();
         return view('content.pengguna.index', compact('users'));
     }
 

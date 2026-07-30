@@ -1,6 +1,10 @@
 @extends('layouts/contentNavbarLayout')
 @section('title', 'Tambah Fitur Store')
 
+@php
+    $konten = $fiturStore?->konten ?? [];
+@endphp
+
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-8">
@@ -16,14 +20,20 @@
                 <form action="{{ route('fitur-store.store') }}" method="POST">
                     @csrf
                     <div class="mb-5">
-                        <label class="form-label">Konten JSON <span class="text-danger">*</span></label>
-                        <textarea name="konten" rows="12" class="form-control font-monospace @error('konten') is-invalid @enderror">{{ old('konten', "{\n  \"title\": \"\",\n  \"description\": \"\"\n}") }}</textarea>
-                        @error('konten')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <label class="form-label">Judul <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control @error('title') is-invalid @enderror"
+                            value="{{ old('title', data_get($konten, 'title')) }}" autofocus>
+                        @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="mb-5">
+                        <label class="form-label">Deskripsi</label>
+                        <textarea name="description" rows="8" class="form-control @error('description') is-invalid @enderror">{{ old('description', data_get($konten, 'description')) }}</textarea>
+                        @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="mb-5">
                         <div class="form-check form-switch">
                             <input type="hidden" name="status" value="0">
-                            <input class="form-check-input" type="checkbox" name="status" id="status" value="1" {{ old('status', '1') ? 'checked' : '' }}>
+                            <input class="form-check-input" type="checkbox" name="status" id="status" value="1" {{ old('status', $fiturStore?->status ?? '1') ? 'checked' : '' }}>
                             <label class="form-check-label" for="status">Status Aktif</label>
                         </div>
                     </div>

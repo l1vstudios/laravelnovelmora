@@ -15,7 +15,7 @@ class CeritaController extends Controller
 
     public function index(Request $request)
     {
-        $query = Cerita::with('kategori')->latest();
+        $query = Cerita::with('kategori');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status === '1');
@@ -24,6 +24,9 @@ class CeritaController extends Controller
             $judul = mb_strtolower(trim($request->judul));
             $query->whereRaw('LOWER(judul) LIKE ?', ["%{$judul}%"]);
         }
+        if ($request->filled('kategori_id')) {
+            $query->where('id_kategori', $request->kategori_id);
+        }
         if ($request->filled('recomendation')) {
             $query->where('recomendation', $request->recomendation === '1');
         }
@@ -31,11 +34,21 @@ class CeritaController extends Controller
             $query->where('wajib_dibaca', $request->wajib_dibaca === '1');
         }
 
+        $this->applyGridSort($query, $request, Cerita::class, 'created_at', 'desc', [
+            'kategori' => 'id_kategori',
+            'index' => 'positions_index',
+            'read' => 'total_read',
+            'vote' => 'total_vote',
+            'rekomendasi' => 'recomendation',
+            'wajib_baca' => 'wajib_dibaca',
+        ]);
+
         $ceritas = $query->paginate(10)->withQueryString();
         $lockCeritas = Cerita::orderBy('judul')->get(['id', 'judul', 'parts', 'isi_cerita']);
         $bulkCeritas = Cerita::orderBy('judul')->get(['id', 'judul']);
+        $kategoris = Kategori::orderBy('default_title')->get(['id', 'default_title']);
 
-        return view('content.cerita.index', compact('ceritas', 'lockCeritas', 'bulkCeritas'));
+        return view('content.cerita.index', compact('ceritas', 'lockCeritas', 'bulkCeritas', 'kategoris'));
     }
 
     public function create()

@@ -9,16 +9,20 @@ class KategoriController extends Controller
 {
     public function index(Request $request)
     {
-        $sort = $request->input('sort');
-
         $query = Kategori::withCount('ceritas');
+        $sort = $request->input('sort');
 
         if ($sort === 'terbanyak') {
             $query->orderByDesc('ceritas_count');
         } elseif ($sort === 'terkecil') {
             $query->orderBy('ceritas_count');
         } else {
-            $query->latest();
+            $this->applyGridSort($query, $request, Kategori::class, 'created_at', 'desc', [
+                'nama_kategori' => 'default_title',
+                'popup' => 'has_popup',
+                'jumlah_cerita' => 'ceritas_count',
+                'ceritas_count' => 'ceritas_count',
+            ]);
         }
 
         $kategoris = $query->paginate(10)->withQueryString();

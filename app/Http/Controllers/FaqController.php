@@ -9,11 +9,16 @@ class FaqController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Faq::latest();
+        $query = Faq::query();
 
         if ($request->filled('status')) {
             $query->where('status', $request->status === '1');
         }
+
+        $this->applyGridSort($query, $request, Faq::class, 'created_at', 'desc', [
+            'pertanyaan' => 'question',
+            'jawaban' => 'answer',
+        ]);
 
         $faqs = $query->paginate(10)->withQueryString();
 

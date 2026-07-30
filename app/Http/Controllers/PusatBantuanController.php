@@ -7,9 +7,15 @@ use Illuminate\Http\Request;
 
 class PusatBantuanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $pusatBantuans = PusatBantuan::latest()->paginate(10);
+        $query = PusatBantuan::query();
+        $this->applyGridSort($query, $request, PusatBantuan::class, 'created_at', 'desc', [
+            'nama_layanan' => 'nama_layanan',
+            'isi_layanan' => 'isi_layanan',
+        ]);
+
+        $pusatBantuans = $query->paginate(10)->withQueryString();
 
         return view('content.pusat-bantuan.index', compact('pusatBantuans'));
     }

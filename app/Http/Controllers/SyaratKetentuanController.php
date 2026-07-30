@@ -7,9 +7,12 @@ use Illuminate\Http\Request;
 
 class SyaratKetentuanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $syaratKetentuans = SyaratKetentuan::orderByDesc('id')->paginate(10);
+        $query = SyaratKetentuan::query();
+        $this->applyGridSort($query, $request, SyaratKetentuan::class, 'id', 'desc');
+
+        $syaratKetentuans = $query->paginate(10)->withQueryString();
 
         return view('content.syarat-ketentuan.index', compact('syaratKetentuans'));
     }

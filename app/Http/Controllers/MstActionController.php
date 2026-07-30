@@ -7,9 +7,14 @@ use Illuminate\Http\Request;
 
 class MstActionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $actions = MstAction::latest()->paginate(10);
+        $query = MstAction::query();
+        $this->applyGridSort($query, $request, MstAction::class, 'created_at', 'desc', [
+            'nama_action' => 'action_name',
+        ]);
+
+        $actions = $query->paginate(10)->withQueryString();
         return view('content.action.index', compact('actions'));
     }
 

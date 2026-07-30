@@ -27,7 +27,7 @@ class DailyRewardController extends Controller
 
     public function index(Request $request)
     {
-        $query = DailyReward::with(['type', 'videoSchedules.video'])->withCount('claims')->latest();
+        $query = DailyReward::with(['type', 'videoSchedules.video'])->withCount('claims');
 
         if ($request->filled('reward_type_id')) {
             $query->where('reward_type_id', $request->reward_type_id);
@@ -36,6 +36,14 @@ class DailyRewardController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status === '1');
         }
+
+        $this->applyGridSort($query, $request, DailyReward::class, 'created_at', 'desc', [
+            'reward' => 'title',
+            'type' => 'reward_type_id',
+            'koin' => 'coin_reward',
+            'klaim' => 'claims_count',
+            'claims_count' => 'claims_count',
+        ]);
 
         $dailyRewards = $query->paginate(10)->withQueryString();
         $rewardTypes = RewardType::orderBy('label')->get();

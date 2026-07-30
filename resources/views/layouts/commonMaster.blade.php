@@ -42,12 +42,12 @@
 
     <style>
         table thead th {
-            cursor: pointer;
             user-select: none;
             white-space: nowrap;
         }
 
         table thead th.sortable-grid-header {
+            cursor: pointer;
             position: relative;
         }
 
@@ -101,52 +101,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const collator = new Intl.Collator('id-ID', { numeric: true, sensitivity: 'base' });
+            document.querySelectorAll('table.table-hover').forEach(function (table) {
+                if (table.getAttribute('data-grid-sortable') === 'false') return;
 
-            function cellValue(row, index) {
-                const cell = row.children[index];
-                if (!cell) return '';
-
-                const explicitValue = cell.getAttribute('data-sort') || cell.getAttribute('data-order');
-                if (explicitValue !== null) return explicitValue.trim();
-
-                return (cell.innerText || cell.textContent || '').replace(/\s+/g, ' ').trim();
-            }
-
-            function comparableValue(value) {
-                const normalized = value.replace(/\./g, '').replace(',', '.');
-                const numeric = Number(normalized);
-
-                if (value !== '' && !Number.isNaN(numeric) && /^-?[\d.,]+$/.test(value)) {
-                    return { type: 'number', value: numeric };
-                }
-
-                const parsedDate = Date.parse(value);
-                if (value !== '' && !Number.isNaN(parsedDate) && /(\d{1,4}[-/ ]|[A-Za-z]{3,})/.test(value)) {
-                    return { type: 'date', value: parsedDate };
-                }
-
-                return { type: 'text', value: value.toLowerCase() };
-            }
-
-            function compareValues(a, b) {
-                const left = comparableValue(a);
-                const right = comparableValue(b);
-
-                if (left.type === right.type && left.type !== 'text') {
-                    return left.value === right.value ? 0 : (left.value > right.value ? 1 : -1);
-                }
-
-                return collator.compare(String(left.value), String(right.value));
-            }
-
-            function sortableRows(tbody) {
-                return Array.from(tbody.querySelectorAll(':scope > tr')).filter(function (row) {
-                    return row.children.length > 1 && !row.querySelector('td[colspan]');
-                });
-            }
-
-            document.querySelectorAll('table').forEach(function (table) {
                 const thead = table.tHead;
                 const tbody = table.tBodies[0];
 
@@ -158,6 +115,12 @@
                 Array.from(headerRow.cells).forEach(function (th, columnIndex) {
                     if (th.hasAttribute('data-sortable') && th.getAttribute('data-sortable') === 'false') return;
 
+                    const headerText = th.innerText.replace(/[▲▼↑↓]/g, '').replace(/\s+/g, ' ').trim();
+                    const normalizedHeader = headerText.toLowerCase().replace(/\s+/g, '_');
+                    const ignoredHeaders = ['', 'aksi', 'preview', 'cover', 'video_hari_ini', 'pilih_semua'];
+
+                    if (ignoredHeaders.includes(normalizedHeader)) return;
+
                     th.classList.add('sortable-grid-header');
 
                     if (!th.querySelector('.grid-sort-icons')) {
@@ -165,28 +128,34 @@
                         th.innerHTML = '<span class="grid-sort-label"><span class="grid-sort-text">' + currentContent + '</span><span class="grid-sort-icons" aria-hidden="true"><i class="grid-sort-up">▲</i><i class="grid-sort-down">▼</i></span></span>';
                     }
 
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const currentSort = urlParams.get('sort') || urlParams.get('sort_by');
+                    const currentDirection = urlParams.get('direction') || urlParams.get('dir') || urlParams.get('sort_dir') || 'desc';
+                    const sortColumn = th.getAttribute('data-sort-column') || th.getAttribute('data-column') || (normalizedHeader === '#' ? 'id' : normalizedHeader);
+
+                    if (currentSort === sortColumn) {
+                        th.classList.add(currentDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                        th.setAttribute('aria-sort', currentDirection === 'asc' ? 'ascending' : 'descending');
+                    } else {
+                        th.setAttribute('aria-sort', 'none');
+                    }
+
                     th.addEventListener('click', function (event) {
                         event.preventDefault();
 
-                        const direction = th.classList.contains('sort-asc') ? 'desc' : 'asc';
-                        const rows = sortableRows(tbody);
+                        const params = new URLSearchParams(window.location.search);
+                        const activeSort = params.get('sort') || params.get('sort_by');
+                        const activeDirection = params.get('direction') || params.get('dir') || params.get('sort_dir') || 'desc';
+                        const direction = activeSort === sortColumn && activeDirection === 'asc' ? 'desc' : 'asc';
 
-                        rows.sort(function (rowA, rowB) {
-                            const compared = compareValues(cellValue(rowA, columnIndex), cellValue(rowB, columnIndex));
-                            return direction === 'asc' ? compared : compared * -1;
-                        });
+                        params.set('sort', sortColumn);
+                        params.set('direction', direction);
+                        params.delete('dir');
+                        params.delete('sort_by');
+                        params.delete('sort_dir');
+                        params.delete('page');
 
-                        Array.from(headerRow.cells).forEach(function (header) {
-                            header.classList.remove('sort-asc', 'sort-desc');
-                            header.setAttribute('aria-sort', 'none');
-                        });
-
-                        th.classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
-                        th.setAttribute('aria-sort', direction === 'asc' ? 'ascending' : 'descending');
-
-                        rows.forEach(function (row) {
-                            tbody.appendChild(row);
-                        });
+                        window.location.href = window.location.pathname + '?' + params.toString();
                     });
                 });
             });

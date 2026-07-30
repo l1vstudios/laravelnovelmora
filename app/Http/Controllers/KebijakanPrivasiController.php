@@ -7,9 +7,14 @@ use Illuminate\Http\Request;
 
 class KebijakanPrivasiController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $kebijakanPrivasis = KebijakanPrivasi::latest()->paginate(10);
+        $query = KebijakanPrivasi::query();
+        $this->applyGridSort($query, $request, KebijakanPrivasi::class, 'created_at', 'desc', [
+            'isi_konten' => 'isi_konten',
+        ]);
+
+        $kebijakanPrivasis = $query->paginate(10)->withQueryString();
 
         return view('content.kebijakan-privasi.index', compact('kebijakanPrivasis'));
     }

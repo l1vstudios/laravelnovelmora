@@ -9,9 +9,15 @@ class VersiController extends Controller
 {
     private const MAX_VERSION_CODE = 2147483647;
 
-    public function index()
+    public function index(Request $request)
     {
-        $versis = Versi::latest()->paginate(10);
+        $query = Versi::query();
+        $this->applyGridSort($query, $request, Versi::class, 'created_at', 'desc', [
+            'nama_versi' => 'version_name',
+            'kode_versi' => 'version_code',
+        ]);
+
+        $versis = $query->paginate(10)->withQueryString();
         return view('content.versi.index', compact('versis'));
     }
 

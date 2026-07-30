@@ -14,7 +14,7 @@ class AdsController extends Controller
 
     public function index(Request $request)
     {
-        $query = Ad::withCount('placements')->latest();
+        $query = Ad::withCount('placements');
 
         if ($request->filled('media_type')) {
             $query->where('media_type', $request->media_type);
@@ -23,6 +23,13 @@ class AdsController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status === '1');
         }
+
+        $this->applyGridSort($query, $request, Ad::class, 'created_at', 'desc', [
+            'judul' => 'title',
+            'tipe' => 'media_type',
+            'dipakai' => 'placements_count',
+            'placements_count' => 'placements_count',
+        ]);
 
         $ads = $query->paginate(10)->withQueryString();
         $globalAds = Ad::orderBy('title')->get(['id', 'title', 'media_type', 'status']);

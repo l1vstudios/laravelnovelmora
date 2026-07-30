@@ -51,9 +51,9 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th data-sort-column="id">#</th>
                             @foreach($columns as $column)
-                                <th>{{ $labels[$column] ?? Str::headline($column) }}</th>
+                                <th data-sort-column="{{ $column }}">{{ $labels[$column] ?? Str::headline($column) }}</th>
                             @endforeach
                         </tr>
                     </thead>

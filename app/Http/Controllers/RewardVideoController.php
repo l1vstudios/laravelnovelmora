@@ -10,11 +10,17 @@ class RewardVideoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = RewardVideo::withCount('schedules')->latest();
+        $query = RewardVideo::withCount('schedules');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status === '1');
         }
+
+        $this->applyGridSort($query, $request, RewardVideo::class, 'created_at', 'desc', [
+            'judul' => 'title',
+            'dipakai' => 'schedules_count',
+            'schedules_count' => 'schedules_count',
+        ]);
 
         $rewardVideos = $query->paginate(10)->withQueryString();
 

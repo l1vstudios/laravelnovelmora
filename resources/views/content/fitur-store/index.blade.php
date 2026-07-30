@@ -30,12 +30,13 @@
             </div>
             <div class="table-responsive text-nowrap">
                 <table class="table table-hover">
-                    <thead><tr><th>#</th><th>Konten</th><th>Status</th><th>Dibuat</th><th>Aksi</th></tr></thead>
+                    <thead><tr><th>#</th><th data-sortable="false">Judul</th><th data-sortable="false">Deskripsi</th><th>Status</th><th>Dibuat</th><th>Aksi</th></tr></thead>
                     <tbody class="table-border-bottom-0">
                         @forelse($fiturStores as $item)
                         <tr>
                             <td>{{ $loop->iteration + ($fiturStores->currentPage() - 1) * $fiturStores->perPage() }}</td>
-                            <td><small class="text-muted">{{ Str::limit(json_encode($item->konten, JSON_UNESCAPED_UNICODE), 100) }}</small></td>
+                            <td><span class="fw-medium">{{ data_get($item->konten, 'title', '-') }}</span></td>
+                            <td><small class="text-muted">{{ Str::limit(data_get($item->konten, 'description', '-'), 100) }}</small></td>
                             <td>@if($item->status)<span class="badge bg-label-success">Aktif</span>@else<span class="badge bg-label-secondary">Nonaktif</span>@endif</td>
                             <td>{{ $item->created_at ? $item->created_at->format('d M Y') : '-' }}</td>
                             <td>
@@ -53,7 +54,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="5" class="text-center py-6 text-muted">Belum ada fitur store. <a href="{{ route('fitur-store.create') }}">Tambah sekarang</a>.</td></tr>
+                        <tr><td colspan="6" class="text-center py-6 text-muted">Belum ada fitur store. <a href="{{ route('fitur-store.create') }}">Tambah sekarang</a>.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
