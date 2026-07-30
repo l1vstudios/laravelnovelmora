@@ -1,9 +1,34 @@
 @extends('layouts/contentNavbarLayout')
 @section('title', 'Tambah Fitur Store')
 
-@php
-    $konten = $fiturStore?->konten ?? [];
-@endphp
+@section('page-script')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const list = document.getElementById('feature-list');
+    const addButton = document.getElementById('add-feature-row');
+
+    function bindRemoveButtons() {
+        list?.querySelectorAll('[data-remove-feature]').forEach((button) => {
+            button.onclick = () => {
+                if (list.querySelectorAll('[data-feature-row]').length > 1) {
+                    button.closest('[data-feature-row]').remove();
+                }
+            };
+        });
+    }
+
+    addButton?.addEventListener('click', () => {
+        const row = list.querySelector('[data-feature-row]').cloneNode(true);
+        row.querySelector('input').value = '';
+        list.appendChild(row);
+        bindRemoveButtons();
+        row.querySelector('input').focus();
+    });
+
+    bindRemoveButtons();
+});
+</script>
+@endsection
 
 @section('content')
 <div class="row justify-content-center">
@@ -20,15 +45,24 @@
                 <form action="{{ route('fitur-store.store') }}" method="POST">
                     @csrf
                     <div class="mb-5">
-                        <label class="form-label">Judul <span class="text-danger">*</span></label>
-                        <input type="text" name="title" class="form-control @error('title') is-invalid @enderror"
-                            value="{{ old('title', data_get($konten, 'title')) }}" autofocus>
-                        @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="mb-5">
-                        <label class="form-label">Deskripsi</label>
-                        <textarea name="description" rows="8" class="form-control @error('description') is-invalid @enderror">{{ old('description', data_get($konten, 'description')) }}</textarea>
-                        @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="form-label mb-0">Daftar Fitur <span class="text-danger">*</span></label>
+                            <button type="button" id="add-feature-row" class="btn btn-sm btn-outline-primary">
+                                <i class="icon-base bx bx-plus me-1"></i> Tambah Baris
+                            </button>
+                        </div>
+                        <div id="feature-list" class="d-grid gap-2">
+                            @foreach(old('features', $features) as $feature)
+                                <div class="input-group" data-feature-row>
+                                    <input type="text" name="features[]" class="form-control @error('features') is-invalid @enderror"
+                                        value="{{ $feature }}" placeholder="Contoh: Akses semua bab" {{ $loop->first ? 'autofocus' : '' }}>
+                                    <button type="button" class="btn btn-outline-danger" data-remove-feature>
+                                        <i class="icon-base bx bx-trash"></i>
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                        @error('features')<div class="text-danger mt-1" style="font-size:.875em;">{{ $message }}</div>@enderror
                     </div>
                     <div class="mb-5">
                         <div class="form-check form-switch">

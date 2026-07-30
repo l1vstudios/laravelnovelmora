@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FiturStore;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class FiturStoreController extends Controller
 {
@@ -25,8 +26,9 @@ class FiturStoreController extends Controller
     public function create()
     {
         $fiturStore = FiturStore::query()->oldest('id')->first();
+        $features = $this->featureItems($fiturStore);
 
-        return view('content.fitur-store.create', compact('fiturStore'));
+        return view('content.fitur-store.create', compact('fiturStore', 'features'));
     }
 
     public function store(Request $request)
@@ -47,12 +49,16 @@ class FiturStoreController extends Controller
 
     public function show(FiturStore $fiturStore)
     {
-        return view('content.fitur-store.show', compact('fiturStore'));
+        $features = $this->featureItems($fiturStore);
+
+        return view('content.fitur-store.show', compact('fiturStore', 'features'));
     }
 
     public function edit(FiturStore $fiturStore)
     {
-        return view('content.fitur-store.edit', compact('fiturStore'));
+        $features = $this->featureItems($fiturStore);
+
+        return view('content.fitur-store.edit', compact('fiturStore', 'features'));
     }
 
     public function update(Request $request, FiturStore $fiturStore)
@@ -74,17 +80,38 @@ class FiturStoreController extends Controller
     private function validatedData(Request $request): array
     {
         $data = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'features' => 'required|array|min:1',
+            'features.*' => 'nullable|string|max:255',
             'status' => 'nullable|boolean',
         ]);
 
+        $features = collect($data['features'])
+            ->map(fn ($feature) => trim((string) $feature))
+            ->filter()
+            ->values();
+
+        if ($features->isEmpty()) {
+            throw ValidationException::withMessages([
+                'features' => 'Minimal isi satu fitur.',
+            ]);
+        }
+
         return [
             'konten' => [
-                'title' => $data['title'],
-                'description' => $data['description'] ?? '',
+                'data' => $features
+                    ->mapWithKeys(fn ($feature, $index) => [(string) ($index + 1) => $feature])
+                    ->all(),
             ],
             'status' => $request->boolean('status'),
         ];
+    }
+
+    private function featureItems(?FiturStore $fiturStore): array
+    {
+        if (! $fiturStore) {
+            return [''];
+        }
+
+        return $fiturStore->feature_items ?: [''];
     }
 }

@@ -14,4 +14,20 @@ class FiturStore extends Model
         'konten' => 'array',
         'status' => 'boolean',
     ];
+
+    public function getFeatureItemsAttribute(): array
+    {
+        $data = data_get($this->konten, 'data', []);
+
+        if (is_array($data) && ! empty($data)) {
+            return array_values(array_filter($data, fn ($value) => trim((string) $value) !== ''));
+        }
+
+        $fallback = array_filter([
+            data_get($this->konten, 'title'),
+            data_get($this->konten, 'description'),
+        ], fn ($value) => trim((string) $value) !== '');
+
+        return array_values($fallback);
+    }
 }
