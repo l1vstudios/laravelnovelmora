@@ -73,7 +73,10 @@ class RoleController extends Controller
 
     public function permissions(Role $role)
     {
-        $menus = Menu::orderBy('urutan')->get()->groupBy('group_label');
+        $menus = Menu::orderBy('group_label')
+            ->orderBy('urutan')
+            ->get()
+            ->groupBy('group_label');
         $role->load('menus');
 
         // Map existing permissions by menu_id for easy lookup in view

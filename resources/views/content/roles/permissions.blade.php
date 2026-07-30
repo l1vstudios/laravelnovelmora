@@ -71,8 +71,12 @@
                     <tr>
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                <i class="icon-base {{ $menu->icon }} text-primary"></i>
-                                <span class="fw-medium">{{ $menu->name }}</span>
+                                @if($menu->parent_slug)
+                                    <span class="text-muted ms-4">└</span>
+                                @else
+                                    <i class="icon-base {{ $menu->icon }} text-primary"></i>
+                                @endif
+                                <span class="{{ $menu->parent_slug ? '' : 'fw-medium' }}">{{ $menu->name }}</span>
                             </div>
                         </td>
                         <td class="text-center">

@@ -40,7 +40,8 @@ class RoleMenuSeeder extends Seeder
             ['name' => 'Super Admin'],
             ['description' => 'Akses penuh ke semua menu', 'is_super_admin' => true]
         );
-        $allMenuIds = Menu::pluck('id');
+        $allMenus = Menu::all(['id', 'slug']);
+        $allMenuIds = $allMenus->pluck('id');
         $sync = [];
         foreach ($allMenuIds as $id) {
             $sync[$id] = [
@@ -56,9 +57,9 @@ class RoleMenuSeeder extends Seeder
             ['description' => 'Hanya dapat melihat data', 'is_super_admin' => false]
         );
         $viewOnly = [];
-        foreach ($allMenuIds as $id) {
-            $viewOnly[$id] = [
-                'can_view' => true,
+        foreach ($allMenus as $menu) {
+            $viewOnly[$menu->id] = [
+                'can_view' => ! str_ends_with($menu->slug, '-create'),
                 'can_insert' => false,
                 'can_update' => false,
                 'can_delete' => false,

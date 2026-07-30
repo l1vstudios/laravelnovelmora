@@ -1,5 +1,23 @@
 @php
   use Illuminate\Support\Facades\Route;
+  $canSeeMenu = function ($menu) use (&$canSeeMenu, $menuAllowedSlugs) {
+      $slug = $menu->slug ?? null;
+
+      if (is_null($menuAllowedSlugs)) {
+          return true;
+      }
+
+      if (is_string($slug) && isset($menuAllowedSlugs[$slug])) {
+          return true;
+      }
+
+      if (isset($menu->submenu)) {
+          return collect($menu->submenu)->some(fn ($child) => $canSeeMenu($child));
+      }
+
+      return false;
+  };
+
   $menuGroups = [];
   $currentGroup = ['header' => null, 'items' => []];
   foreach ($menuData[0]->menu as $item) {
@@ -28,10 +46,7 @@
   <ul class="menu-inner py-1">
     @foreach ($menuGroups as $group)
       @php
-        $groupHasAccess = collect($group['items'])->some(function ($m) use ($menuAllowedSlugs) {
-            $slug = $m->slug ?? null;
-            return is_null($menuAllowedSlugs) || (is_string($slug) && isset($menuAllowedSlugs[$slug]));
-        });
+        $groupHasAccess = collect($group['items'])->some(fn ($m) => $canSeeMenu($m));
       @endphp
       @if ($group['header'] !== null && $groupHasAccess)
         <li class="menu-header small text-uppercase">
@@ -41,7 +56,7 @@
       @foreach ($group['items'] as $menu)
         @php
           $slug = $menu->slug ?? null;
-          $hasAccess = is_null($menuAllowedSlugs) || (is_string($slug) && isset($menuAllowedSlugs[$slug]));
+          $hasAccess = $canSeeMenu($menu);
           $activeClass = null;
           $currentRouteName = Route::currentRouteName();
           if ($hasAccess) {

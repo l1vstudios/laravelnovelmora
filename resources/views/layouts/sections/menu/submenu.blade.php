@@ -1,10 +1,29 @@
 @php
 use Illuminate\Support\Facades\Route;
+
+$canSeeMenu ??= function ($menu) use (&$canSeeMenu, $menuAllowedSlugs) {
+    $slug = $menu->slug ?? null;
+
+    if (is_null($menuAllowedSlugs)) {
+        return true;
+    }
+
+    if (is_string($slug) && isset($menuAllowedSlugs[$slug])) {
+        return true;
+    }
+
+    if (isset($menu->submenu)) {
+        return collect($menu->submenu)->some(fn ($child) => $canSeeMenu($child));
+    }
+
+    return false;
+};
 @endphp
 
 <ul class="menu-sub">
   @if (isset($menu))
     @foreach ($menu as $submenu)
+    @continue(! $canSeeMenu($submenu))
 
     {{-- active menu method --}}
     @php

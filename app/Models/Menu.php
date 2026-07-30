@@ -8,7 +8,7 @@ class Menu extends Model
 {
     protected $table = 'mst_menu';
 
-    protected $fillable = ['name', 'slug', 'url', 'icon', 'group_label', 'urutan'];
+    protected $fillable = ['name', 'slug', 'url', 'icon', 'group_label', 'parent_slug', 'urutan'];
 
     public function roles()
     {

@@ -34,11 +34,14 @@ class CheckRolePermission
 
         $user->load('role.menus');
         $method = strtolower($request->method());
+        $routeName = $request->route()?->getName();
 
         $action = match(true) {
             in_array($method, ['put', 'patch']) => 'update',
             $method === 'post'                  => 'insert',
             $method === 'delete'                => 'delete',
+            is_string($routeName) && str_ends_with($routeName, '.create') => 'insert',
+            is_string($routeName) && str_ends_with($routeName, '.edit')   => 'update',
             default                             => 'view',
         };
 
