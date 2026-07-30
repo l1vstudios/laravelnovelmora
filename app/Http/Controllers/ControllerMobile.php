@@ -244,13 +244,38 @@ class Controller extends BaseController
             ], 500);
         }
     }
-    public function getCerita()
+    public function getCerita(Request $request)
     {
         try {
-            $data = DB::table('mst_cerita')
+            $limit = $request->query('limit');
+            $offset = $request->query('offset');
+            $query = DB::table('mst_cerita')
                 ->select('mst_cerita.*', 'mst_kategori.default_title', 'mst_cerita.positions_index as position_index')
-                ->join('mst_kategori', 'mst_cerita.id_kategori', '=', 'mst_kategori.id')
-                ->get();
+                ->join('mst_kategori', 'mst_cerita.id_kategori', '=', 'mst_kategori.id');
+
+            if ($limit !== null) {
+                if (!filter_var($limit, FILTER_VALIDATE_INT) || (int) $limit < 1) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'limit tidak valid.'
+                    ], 422);
+                }
+
+                $query->orderBy('mst_cerita.id', 'asc')->limit(min((int) $limit, 100));
+            }
+
+            if ($offset !== null) {
+                if (!filter_var($offset, FILTER_VALIDATE_INT) || (int) $offset < 0) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'offset tidak valid.'
+                    ], 422);
+                }
+
+                $query->offset((int) $offset);
+            }
+
+            $data = $query->get();
             return response()->json([
                 'status' => 'success',
                 'count'  => count($data),
