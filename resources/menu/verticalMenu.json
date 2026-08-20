@@ -13,6 +13,12 @@
       "slug": "analytics"
     },
     {
+      "url": "earning",
+      "name": "Earning",
+      "icon": "menu-icon icon-base bx bx-wallet",
+      "slug": "earning"
+    },
+    {
       "menuHeader": "Manajemen Konten"
     },
     {

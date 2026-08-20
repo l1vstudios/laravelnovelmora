@@ -23,7 +23,7 @@
         <div class="d-flex align-items-center justify-content-between mb-6">
             <div>
                 <h4 class="mb-1">Pengguna BACAAN</h4>
-                <small class="text-muted">Data mobile user dari tabel mst_users</small>
+                <small class="text-muted">Data Pengguna Bacaan</small>
             </div>
             <a href="{{ route('dashboard-analytics') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="icon-base bx bx-arrow-back me-1"></i> Kembali
