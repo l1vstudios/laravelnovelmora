@@ -44,7 +44,8 @@
                     <div>
                         <p class="mb-0 text-muted" style="font-size:.75rem;">Transaksi Paket</p>
                         <h5 class="mb-0">{{ number_format($summary['count_paket'], 0, ',', '.') }}</h5>
-                        <small class="text-muted">Rp {{ number_format($summary['total_paket'], 0, ',', '.') }}</small>
+                        <small class="text-muted">Gross: Rp {{ number_format($summary['total_paket'], 0, ',', '.') }}</small>
+                        <br><small class="text-success">Bersih: Rp {{ number_format((int) round($summary['total_paket'] * ((100 - $commission) / 100)), 0, ',', '.') }}</small>
                     </div>
                 </div>
             </div>
@@ -60,7 +61,8 @@
                     <div>
                         <p class="mb-0 text-muted" style="font-size:.75rem;">Transaksi Koin</p>
                         <h5 class="mb-0">{{ number_format($summary['count_koin'], 0, ',', '.') }}</h5>
-                        <small class="text-muted">Rp {{ number_format($summary['total_koin'], 0, ',', '.') }}</small>
+                        <small class="text-muted">Gross: Rp {{ number_format($summary['total_koin'], 0, ',', '.') }}</small>
+                        <br><small class="text-success">Bersih: Rp {{ number_format((int) round($summary['total_koin'] * ((100 - $commission) / 100)), 0, ',', '.') }}</small>
                     </div>
                 </div>
             </div>
