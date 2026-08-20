@@ -27,7 +27,7 @@
                         <span class="avatar-initial rounded bg-label-success"><i class="icon-base bx bx-check-circle"></i></span>
                     </div>
                     <div>
-                        <p class="mb-0 text-muted" style="font-size:.75rem;">Total Bersih (setelah 30% Google)</p>
+                        <p class="mb-0 text-muted" style="font-size:.75rem;">Total Bersih (setelah {{ $commission }}% potongan)</p>
                         <h5 class="mb-0">Rp {{ number_format($summary['total_net'], 0, ',', '.') }}</h5>
                     </div>
                 </div>
@@ -83,7 +83,7 @@
                             <option value="koin" {{ $type === 'koin' ? 'selected' : '' }}>Koin</option>
                         </select>
                     </div>
-                    <div class="col-md-3 col-sm-6">
+                    <div class="col-md-2 col-sm-6">
                         <label class="form-label mb-1 text-muted" style="font-size:.75rem;">Cari (nama/email/trx id)</label>
                         <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari..." value="{{ $search }}">
                     </div>
@@ -95,9 +95,13 @@
                         <label class="form-label mb-1 text-muted" style="font-size:.75rem;">Sampai Tanggal</label>
                         <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $endDate }}">
                     </div>
+                    <div class="col-md-1 col-sm-6">
+                        <label class="form-label mb-1 text-muted" style="font-size:.75rem;">Potongan (%)</label>
+                        <input type="number" name="commission" class="form-control form-control-sm" placeholder="30" value="{{ $commission }}" min="0" max="100" step="0.1">
+                    </div>
                     <div class="col-md-3 col-sm-12 d-flex gap-2">
                         <button type="submit" class="btn btn-sm btn-primary"><i class="icon-base bx bx-filter me-1"></i> Filter</button>
-                        @if(request()->hasAny(['type', 'search', 'start_date', 'end_date']))
+                        @if(request()->hasAny(['type', 'search', 'start_date', 'end_date', 'commission']))
                         <a href="{{ route('earning.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
                         @endif
                     </div>
@@ -139,7 +143,7 @@
                             <td>{{ $earning->description ?? '-' }}</td>
                             <td>Rp {{ number_format((int) $earning->amount_price, 0, ',', '.') }}</td>
                             <td>
-                                <span class="text-success fw-medium">Rp {{ number_format((int) round($earning->amount_price * 0.70), 0, ',', '.') }}</span>
+                                <span class="text-success fw-medium">Rp {{ number_format((int) round($earning->amount_price * ((100 - $commission) / 100)), 0, ',', '.') }}</span>
                             </td>
                             <td>
                                 @if($earning->start_date)

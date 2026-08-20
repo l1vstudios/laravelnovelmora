@@ -15,6 +15,8 @@ class EarningController extends Controller
         $search = $request->input('search');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+        $commission = $request->input('commission', 30); // default 30%
+        $commission = max(0, min(100, (float) $commission)); // clamp 0-100
 
         // Query trx_buy_paket
         $paketQuery = DB::table('trx_buy_paket')
@@ -108,7 +110,8 @@ class EarningController extends Controller
         $totalPaket = (int) $summaryPaketQuery->sum(DB::raw("CAST(amount_price AS INTEGER)"));
         $totalKoin = (int) $summaryKoinQuery->sum('amount_price');
         $totalGross = $totalPaket + $totalKoin;
-        $totalNet = (int) round($totalGross * 0.70); // After 30% Google Play commission
+        $netMultiplier = (100 - $commission) / 100;
+        $totalNet = (int) round($totalGross * $netMultiplier);
 
         $summary = [
             'total_gross' => $totalGross,
@@ -119,6 +122,6 @@ class EarningController extends Controller
             'count_koin' => DB::table('trx_buy_koin')->where('status_payment', 'verified')->count(),
         ];
 
-        return view('content.earning.index', compact('earnings', 'summary', 'type', 'search', 'startDate', 'endDate'));
+        return view('content.earning.index', compact('earnings', 'summary', 'type', 'search', 'startDate', 'endDate', 'commission'));
     }
 }
