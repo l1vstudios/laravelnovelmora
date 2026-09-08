@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const categoryItems = document.querySelectorAll('[data-category-option]');
     const hasErrors = @json($errors->any());
     const oldFormType = @json(old('form_type'));
-    const ceritaOptionsUrl = @json(route('cerita.options'));
+    const ceritaOptionsUrl = @json(route('cerita.index'));
 
     function syncActionButton() {
         const selectedAction = document.querySelector('input[name="lock_action"]:checked')?.value || 'lock';
@@ -165,6 +165,11 @@ document.addEventListener('DOMContentLoaded', function () {
         listInput.appendChild(item);
     }
 
+    function showLoadError(listInput, error) {
+        const detail = error?.message ? ` (${error.message})` : '';
+        renderStoryMessage(listInput, `Gagal memuat cerita${detail}.`, 'text-danger');
+    }
+
     function renderStoryPager(pagerInput, state) {
         if (!pagerInput) {
             return;
@@ -193,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {
             renderStoryPager(pagerInput, state);
             renderStoryMessage(listInput, 'Memuat cerita...');
 
-            const params = new URLSearchParams({ page: String(page), per_page: '5' });
+            const params = new URLSearchParams({ story_options: '1', page: String(page), per_page: '5' });
             const keyword = searchInput?.value.trim() || '';
 
             if (keyword) {
@@ -209,7 +214,13 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (!response.ok) {
-                throw new Error('Gagal memuat daftar cerita.');
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type') || '';
+
+            if (!contentType.includes('application/json')) {
+                throw new Error('response bukan JSON');
             }
 
             const payload = await response.json();
@@ -290,25 +301,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 event.preventDefault();
-                loadOptions(1).catch(() => {
-                    renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
-                });
+                loadOptions(1).catch((error) => showLoadError(listInput, error));
             });
 
             searchInput.addEventListener('input', () => {
                 clearTimeout(timer);
                 timer = setTimeout(() => {
-                    loadOptions(1).catch(() => {
-                        renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
-                    });
+                    loadOptions(1).catch((error) => showLoadError(listInput, error));
                 }, 250);
             });
         }
 
         searchButton?.addEventListener('click', () => {
-            loadOptions(1).catch(() => {
-                renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
-            });
+            loadOptions(1).catch((error) => showLoadError(listInput, error));
         });
 
         resetButton?.addEventListener('click', () => {
@@ -316,9 +321,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 searchInput.value = '';
             }
 
-            loadOptions(1).catch(() => {
-                renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
-            });
+            loadOptions(1).catch((error) => showLoadError(listInput, error));
         });
 
         pagerInput?.addEventListener('click', (event) => {
@@ -339,16 +342,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 ? Math.max(1, state.currentPage - 1)
                 : Math.min(state.lastPage, state.currentPage + 1);
 
-            loadOptions(nextPage).catch(() => {
-                renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
-            });
+            loadOptions(nextPage).catch((error) => showLoadError(listInput, error));
         });
 
         modalInput?.addEventListener('shown.bs.modal', () => {
             if (!state.loaded) {
-                loadOptions(1).catch(() => {
-                    renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
-                });
+                loadOptions(1).catch((error) => showLoadError(listInput, error));
             }
         });
 

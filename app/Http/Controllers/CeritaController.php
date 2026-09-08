@@ -15,6 +15,10 @@ class CeritaController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->boolean('story_options')) {
+            return $this->storyOptionsResponse($request);
+        }
+
         $query = Cerita::query()
             ->select([
                 'id',
@@ -76,6 +80,11 @@ class CeritaController extends Controller
     }
 
     public function options(Request $request)
+    {
+        return $this->storyOptionsResponse($request);
+    }
+
+    private function storyOptionsResponse(Request $request)
     {
         $request->validate([
             'q' => 'nullable|string|max:255',
