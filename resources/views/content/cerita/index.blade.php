@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const categoryItems = document.querySelectorAll('[data-category-option]');
     const hasErrors = @json($errors->any());
     const oldFormType = @json(old('form_type'));
-    const ceritaOptionsUrl = @json(route('cerita.index'));
+    const ceritaOptionsUrl = @json(route('cerita.index', [], false));
 
     function syncActionButton() {
         const selectedAction = document.querySelector('input[name="lock_action"]:checked')?.value || 'lock';
