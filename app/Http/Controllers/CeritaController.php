@@ -60,17 +60,27 @@ class CeritaController extends Controller
 
         $ceritas = $query->paginate(10)->withQueryString();
         $selectedCeritas = $this->selectedCeritaOptions($request->old('cerita_ids', []));
-        $hasCeritas = Cerita::query()->exists();
+        $initialCeritas = $this->initialCeritaOptions($selectedCeritas->pluck('id')->all());
+        $storyPickerTotal = Cerita::query()->count();
+        $storyPickerLastPage = max(1, (int) ceil($storyPickerTotal / 5));
+        $lockPickerCeritas = $request->old('form_type') === 'global-lock'
+            ? $selectedCeritas->concat($initialCeritas)->unique('id')->values()
+            : $initialCeritas;
+        $bulkPickerCeritas = $request->old('form_type') === 'bulk-pilihan'
+            ? $selectedCeritas->concat($initialCeritas)->unique('id')->values()
+            : $initialCeritas;
+        $hasCeritas = $storyPickerTotal > 0;
         $kategoris = Kategori::orderBy('default_title')->get(['id', 'default_title']);
 
-        return view('content.cerita.index', compact('ceritas', 'selectedCeritas', 'hasCeritas', 'kategoris'));
+        return view('content.cerita.index', compact('ceritas', 'lockPickerCeritas', 'bulkPickerCeritas', 'storyPickerLastPage', 'hasCeritas', 'kategoris'));
     }
 
     public function options(Request $request)
     {
         $request->validate([
             'q' => 'nullable|string|max:255',
-            'limit' => 'nullable|integer|min:1|max:50',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:5',
         ]);
 
         $query = Cerita::query()
@@ -82,8 +92,16 @@ class CeritaController extends Controller
             $query->whereRaw('LOWER(judul) LIKE ?', ["%{$judul}%"]);
         }
 
+        $ceritas = $query->paginate($request->integer('per_page', 5));
+
         return response()->json([
-            'data' => $query->limit($request->integer('limit', 20))->get(),
+            'data' => $ceritas->items(),
+            'meta' => [
+                'current_page' => $ceritas->currentPage(),
+                'last_page' => $ceritas->lastPage(),
+                'per_page' => $ceritas->perPage(),
+                'total' => $ceritas->total(),
+            ],
         ]);
     }
 
@@ -488,6 +506,16 @@ class CeritaController extends Controller
             ->select(['id', 'judul', 'parts'])
             ->whereIn('id', $ids)
             ->orderBy('judul')
+            ->get();
+    }
+
+    private function initialCeritaOptions(array $excludedIds)
+    {
+        return Cerita::query()
+            ->select(['id', 'judul', 'parts'])
+            ->when($excludedIds !== [], fn ($query) => $query->whereNotIn('id', $excludedIds))
+            ->orderBy('judul')
+            ->limit(5)
             ->get();
     }
 }

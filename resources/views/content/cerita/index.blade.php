@@ -5,14 +5,20 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const scopeAll = document.getElementById('global-lock-all');
-    const storySelect = document.getElementById('global-lock-stories');
+    const storyList = document.getElementById('global-lock-stories');
     const storySearch = document.getElementById('global-lock-story-search');
+    const storyPager = document.getElementById('global-lock-story-pager');
+    const storyHidden = document.getElementById('global-lock-selected-stories');
+    const storyCount = document.getElementById('global-lock-story-count');
     const actionInputs = document.querySelectorAll('input[name="lock_action"]');
     const submitButton = document.getElementById('global-lock-submit');
     const globalLockModal = document.getElementById('global-lock-modal');
     const bulkScopeAll = document.getElementById('bulk-pilihan-all');
-    const bulkStorySelect = document.getElementById('bulk-pilihan-stories');
+    const bulkStoryList = document.getElementById('bulk-pilihan-stories');
     const bulkStorySearch = document.getElementById('bulk-pilihan-story-search');
+    const bulkStoryPager = document.getElementById('bulk-pilihan-story-pager');
+    const bulkStoryHidden = document.getElementById('bulk-pilihan-selected-stories');
+    const bulkStoryCount = document.getElementById('bulk-pilihan-story-count');
     const bulkFieldInputs = document.querySelectorAll('input[name="bulk_fields[]"]');
     const bulkActionInputs = document.querySelectorAll('input[name="bulk_action"]');
     const bulkSubmitButton = document.getElementById('bulk-pilihan-submit');
@@ -26,26 +32,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const hasErrors = @json($errors->any());
     const oldFormType = @json(old('form_type'));
     const ceritaOptionsUrl = @json(route('cerita.options'));
-
-    function syncStoryPicker(scopeAllInput, selectInput, searchInput) {
-        if (!scopeAllInput || !selectInput) {
-            return;
-        }
-
-        selectInput.disabled = scopeAllInput.checked;
-        selectInput.required = !scopeAllInput.checked;
-
-        if (searchInput) {
-            searchInput.disabled = scopeAllInput.checked;
-            searchInput.value = scopeAllInput.checked ? '' : searchInput.value;
-        }
-
-        if (scopeAllInput.checked) {
-            Array.from(selectInput.options).forEach((option) => {
-                option.selected = false;
-            });
-        }
-    }
 
     function syncActionButton() {
         const selectedAction = document.querySelector('input[name="lock_action"]:checked')?.value || 'lock';
@@ -89,92 +75,108 @@ document.addEventListener('DOMContentLoaded', function () {
         return includeParts ? `${title} (${parts} chapter)` : title;
     }
 
-    function pickerState(selectInput) {
-        if (selectInput._storyPickerState) {
-            return selectInput._storyPickerState;
+    function pickerState(listInput) {
+        if (listInput._storyPickerState) {
+            return listInput._storyPickerState;
         }
 
         const selected = new Map();
 
-        Array.from(selectInput.options).forEach((option) => {
-            if (!option.selected) {
-                return;
-            }
-
-            selected.set(String(option.value), {
-                id: option.value,
-                judul: option.dataset.judul || option.textContent.trim(),
-                parts: option.dataset.parts || 0,
+        listInput.querySelectorAll('[data-story-checkbox]:checked').forEach((checkbox) => {
+            selected.set(String(checkbox.value), {
+                id: checkbox.value,
+                judul: checkbox.dataset.judul || '',
+                parts: checkbox.dataset.parts || 0,
             });
         });
 
-        selectInput._storyPickerState = { selected, loaded: false };
+        listInput._storyPickerState = {
+            selected,
+            currentPage: Number(listInput.dataset.currentPage || 1),
+            lastPage: Number(listInput.dataset.lastPage || 1),
+            loaded: listInput.children.length > 0,
+        };
 
-        return selectInput._storyPickerState;
+        return listInput._storyPickerState;
     }
 
-    function syncSelectedStories(selectInput) {
-        const state = pickerState(selectInput);
+    function syncHiddenStories(state, hiddenInput, countInput) {
+        hiddenInput.innerHTML = '';
 
-        Array.from(selectInput.options).forEach((option) => {
-            const id = String(option.value);
-
-            if (option.selected) {
-                state.selected.set(id, {
-                    id,
-                    judul: option.dataset.judul || option.textContent.trim(),
-                    parts: option.dataset.parts || 0,
-                });
-            } else {
-                state.selected.delete(id);
-            }
+        state.selected.forEach((story) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'cerita_ids[]';
+            input.value = story.id;
+            hiddenInput.appendChild(input);
         });
+
+        if (countInput) {
+            countInput.textContent = `${state.selected.size} dipilih`;
+        }
     }
 
-    function renderStoryOptions(selectInput, stories, includeParts) {
-        const state = pickerState(selectInput);
-        const merged = new Map(state.selected);
+    function renderStoryRows(listInput, stories, includeParts) {
+        const state = pickerState(listInput);
+        listInput.innerHTML = '';
+
+        if (!stories.length) {
+            const empty = document.createElement('div');
+            empty.className = 'list-group-item text-muted text-center py-4';
+            empty.textContent = 'Tidak ada cerita ditemukan.';
+            listInput.appendChild(empty);
+            return;
+        }
 
         stories.forEach((story) => {
             const id = String(story.id);
+            const label = document.createElement('label');
+            label.className = 'list-group-item d-flex align-items-center gap-3';
 
-            if (!merged.has(id)) {
-                merged.set(id, story);
-            }
-        });
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'form-check-input m-0';
+            checkbox.value = id;
+            checkbox.checked = state.selected.has(id);
+            checkbox.dataset.storyCheckbox = '1';
+            checkbox.dataset.judul = story.judul || story.title || '';
+            checkbox.dataset.parts = story.parts || 0;
 
-        selectInput.innerHTML = '';
+            const text = document.createElement('span');
+            text.className = 'flex-grow-1';
+            text.textContent = storyOptionLabel(story, includeParts);
 
-        if (!merged.size) {
-            const option = new Option('Tidak ada cerita ditemukan', '');
-            option.disabled = true;
-            selectInput.appendChild(option);
-            return;
-        }
-
-        merged.forEach((story) => {
-            const id = String(story.id);
-            const option = new Option(storyOptionLabel(story, includeParts), id, false, state.selected.has(id));
-            option.dataset.judul = story.judul || story.title || '';
-            option.dataset.parts = story.parts || 0;
-            selectInput.appendChild(option);
+            label.appendChild(checkbox);
+            label.appendChild(text);
+            listInput.appendChild(label);
         });
     }
 
-    function setupAsyncStoryPicker(scopeAllInput, selectInput, searchInput, modalInput, includeParts) {
-        if (!scopeAllInput || !selectInput) {
+    function renderStoryPager(pagerInput, state) {
+        if (!pagerInput) {
             return;
         }
 
-        const state = pickerState(selectInput);
+        pagerInput.querySelector('[data-story-prev]').disabled = state.currentPage <= 1;
+        pagerInput.querySelector('[data-story-next]').disabled = state.currentPage >= state.lastPage;
+        pagerInput.querySelector('[data-story-page-label]').disabled = true;
+        pagerInput.querySelector('[data-story-page-label]').textContent = `Halaman ${state.currentPage} / ${state.lastPage}`;
+    }
+
+    function setupPaginatedStoryPicker(scopeAllInput, listInput, searchInput, pagerInput, hiddenInput, countInput, modalInput, includeParts) {
+        if (!scopeAllInput || !listInput || !hiddenInput) {
+            return;
+        }
+
+        const state = pickerState(listInput);
         let timer = null;
 
-        async function loadOptions() {
+        async function loadOptions(page = 1) {
             if (scopeAllInput.checked) {
                 return;
             }
 
-            const params = new URLSearchParams({ limit: '20' });
+            const params = new URLSearchParams({ page: String(page), per_page: '5' });
             const keyword = searchInput?.value.trim() || '';
 
             if (keyword) {
@@ -190,36 +192,94 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const payload = await response.json();
-            renderStoryOptions(selectInput, payload.data || [], includeParts);
+            const meta = payload.meta || {};
+
+            state.currentPage = Number(meta.current_page || page);
+            state.lastPage = Number(meta.last_page || 1);
             state.loaded = true;
+
+            renderStoryRows(listInput, payload.data || [], includeParts);
+            renderStoryPager(pagerInput, state);
+            syncHiddenStories(state, hiddenInput, countInput);
         }
 
-        scopeAllInput.addEventListener('change', () => {
-            syncStoryPicker(scopeAllInput, selectInput, searchInput);
+        function syncScope() {
+            const isAll = scopeAllInput.checked;
+            listInput.classList.toggle('opacity-50', isAll);
+            listInput.querySelectorAll('[data-story-checkbox]').forEach((checkbox) => {
+                checkbox.disabled = isAll;
+                checkbox.checked = false;
+            });
 
-            if (!scopeAllInput.checked && !state.loaded) {
-                loadOptions().catch(() => {});
+            if (searchInput) {
+                searchInput.disabled = isAll;
+                searchInput.value = isAll ? '' : searchInput.value;
             }
+
+            if (pagerInput) {
+                renderStoryPager(pagerInput, state);
+                pagerInput.querySelectorAll('button').forEach((button) => {
+                    button.disabled = isAll || button.disabled;
+                });
+            }
+
+            if (isAll) {
+                state.selected.clear();
+                hiddenInput.innerHTML = '';
+                syncHiddenStories(state, hiddenInput, countInput);
+            }
+        }
+
+        listInput.addEventListener('change', (event) => {
+            const checkbox = event.target.closest('[data-story-checkbox]');
+
+            if (!checkbox) {
+                return;
+            }
+
+            const id = String(checkbox.value);
+
+            if (checkbox.checked) {
+                state.selected.set(id, {
+                    id,
+                    judul: checkbox.dataset.judul || '',
+                    parts: checkbox.dataset.parts || 0,
+                });
+            } else {
+                state.selected.delete(id);
+            }
+
+            syncHiddenStories(state, hiddenInput, countInput);
         });
 
-        selectInput.addEventListener('change', () => syncSelectedStories(selectInput));
+        scopeAllInput.addEventListener('change', syncScope);
 
         if (searchInput) {
             searchInput.addEventListener('input', () => {
                 clearTimeout(timer);
                 timer = setTimeout(() => {
-                    loadOptions().catch(() => {});
+                    loadOptions(1).catch(() => {});
                 }, 250);
             });
         }
 
+        pagerInput?.querySelector('[data-story-prev]')?.addEventListener('click', () => {
+            loadOptions(Math.max(1, state.currentPage - 1)).catch(() => {});
+        });
+
+        pagerInput?.querySelector('[data-story-next]')?.addEventListener('click', () => {
+            loadOptions(Math.min(state.lastPage, state.currentPage + 1)).catch(() => {});
+        });
+
         modalInput?.addEventListener('shown.bs.modal', () => {
             if (!state.loaded) {
-                loadOptions().catch(() => {});
+                loadOptions(1).catch(() => {});
             }
         });
 
-        syncStoryPicker(scopeAllInput, selectInput, searchInput);
+        syncHiddenStories(state, hiddenInput, countInput);
+        renderStoryPager(pagerInput, state);
+        syncScope();
     }
 
     function filterCategoryOptions() {
@@ -235,14 +295,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    if (scopeAll && storySelect) {
-        setupAsyncStoryPicker(scopeAll, storySelect, storySearch, globalLockModal, true);
+    if (scopeAll && storyList) {
+        setupPaginatedStoryPicker(scopeAll, storyList, storySearch, storyPager, storyHidden, storyCount, globalLockModal, true);
         actionInputs.forEach((input) => input.addEventListener('change', syncActionButton));
         syncActionButton();
     }
 
-    if (bulkScopeAll && bulkStorySelect) {
-        setupAsyncStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch, bulkPilihanModal, false);
+    if (bulkScopeAll && bulkStoryList) {
+        setupPaginatedStoryPicker(bulkScopeAll, bulkStoryList, bulkStorySearch, bulkStoryPager, bulkStoryHidden, bulkStoryCount, bulkPilihanModal, false);
         bulkFieldInputs.forEach((input) => input.addEventListener('change', syncBulkButton));
         bulkActionInputs.forEach((input) => input.addEventListener('change', syncBulkButton));
         syncBulkButton();
@@ -542,16 +602,31 @@ document.addEventListener('DOMContentLoaded', function () {
                             <label for="global-lock-stories" class="form-label">Judul Novel</label>
                             <input type="text" id="global-lock-story-search" class="form-control mb-2"
                                 placeholder="Cari judul novel..." autocomplete="off">
-                            <select id="global-lock-stories" name="cerita_ids[]" class="form-select" multiple size="7">
-                                @foreach(old('form_type') === 'global-lock' ? $selectedCeritas : collect() as $selectedCerita)
-                                    <option value="{{ $selectedCerita->id }}" selected
-                                        data-judul="{{ $selectedCerita->judul }}"
-                                        data-parts="{{ (int) $selectedCerita->parts }}">
-                                        {{ $selectedCerita->judul }} ({{ (int) $selectedCerita->parts }} chapter)
-                                    </option>
+                            @php
+                                $selectedStoryIds = collect(old('cerita_ids', []))->map(fn ($id) => (string) $id);
+                            @endphp
+                            <div id="global-lock-selected-stories"></div>
+                            <div id="global-lock-stories" class="list-group border rounded overflow-auto"
+                                data-current-page="1" data-last-page="{{ $storyPickerLastPage }}" style="max-height:230px;">
+                                @foreach($lockPickerCeritas as $selectedCerita)
+                                    <label class="list-group-item d-flex align-items-center gap-3">
+                                        <input type="checkbox" class="form-check-input m-0" value="{{ $selectedCerita->id }}"
+                                            data-story-checkbox="1"
+                                            data-judul="{{ $selectedCerita->judul }}"
+                                            data-parts="{{ (int) $selectedCerita->parts }}"
+                                            {{ old('form_type') === 'global-lock' && $selectedStoryIds->contains((string) $selectedCerita->id) ? 'checked' : '' }}>
+                                        <span class="flex-grow-1">{{ $selectedCerita->judul }} ({{ (int) $selectedCerita->parts }} chapter)</span>
+                                    </label>
                                 @endforeach
-                            </select>
-                            <small class="text-muted">Tahan Ctrl atau Cmd untuk memilih lebih dari satu judul.</small>
+                            </div>
+                            <div id="global-lock-story-pager" class="d-flex align-items-center justify-content-between gap-2 mt-2">
+                                <small id="global-lock-story-count" class="text-muted">0 dipilih</small>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Pagination judul novel">
+                                    <button type="button" class="btn btn-outline-secondary" data-story-prev>Prev</button>
+                                    <button type="button" class="btn btn-outline-secondary disabled" data-story-page-label>Halaman 1 / {{ $storyPickerLastPage }}</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-story-next>Next</button>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-md-6">
@@ -643,16 +718,31 @@ document.addEventListener('DOMContentLoaded', function () {
                             <label for="bulk-pilihan-stories" class="form-label">Judul Cerita</label>
                             <input type="text" id="bulk-pilihan-story-search" class="form-control mb-2"
                                 placeholder="Cari judul cerita..." autocomplete="off">
-                            <select id="bulk-pilihan-stories" name="cerita_ids[]" class="form-select" multiple size="8">
-                                @foreach(old('form_type') === 'bulk-pilihan' ? $selectedCeritas : collect() as $selectedCerita)
-                                    <option value="{{ $selectedCerita->id }}" selected
-                                        data-judul="{{ $selectedCerita->judul }}"
-                                        data-parts="{{ (int) $selectedCerita->parts }}">
-                                        {{ $selectedCerita->judul }}
-                                    </option>
+                            @php
+                                $selectedStoryIds = collect(old('cerita_ids', []))->map(fn ($id) => (string) $id);
+                            @endphp
+                            <div id="bulk-pilihan-selected-stories"></div>
+                            <div id="bulk-pilihan-stories" class="list-group border rounded overflow-auto"
+                                data-current-page="1" data-last-page="{{ $storyPickerLastPage }}" style="max-height:230px;">
+                                @foreach($bulkPickerCeritas as $selectedCerita)
+                                    <label class="list-group-item d-flex align-items-center gap-3">
+                                        <input type="checkbox" class="form-check-input m-0" value="{{ $selectedCerita->id }}"
+                                            data-story-checkbox="1"
+                                            data-judul="{{ $selectedCerita->judul }}"
+                                            data-parts="{{ (int) $selectedCerita->parts }}"
+                                            {{ old('form_type') === 'bulk-pilihan' && $selectedStoryIds->contains((string) $selectedCerita->id) ? 'checked' : '' }}>
+                                        <span class="flex-grow-1">{{ $selectedCerita->judul }}</span>
+                                    </label>
                                 @endforeach
-                            </select>
-                            <small class="text-muted">Tahan Ctrl atau Cmd untuk memilih lebih dari satu judul.</small>
+                            </div>
+                            <div id="bulk-pilihan-story-pager" class="d-flex align-items-center justify-content-between gap-2 mt-2">
+                                <small id="bulk-pilihan-story-count" class="text-muted">0 dipilih</small>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Pagination judul cerita">
+                                    <button type="button" class="btn btn-outline-secondary" data-story-prev>Prev</button>
+                                    <button type="button" class="btn btn-outline-secondary disabled" data-story-page-label>Halaman 1 / {{ $storyPickerLastPage }}</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-story-next>Next</button>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 @endif
