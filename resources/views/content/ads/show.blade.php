@@ -72,7 +72,7 @@
                 <table class="table">
                     <thead><tr><th>Cerita</th><th>Posisi</th><th>Chapter</th><th>Scope</th></tr></thead>
                     <tbody>
-                        @forelse($ad->placements as $placement)
+                        @forelse($placements as $placement)
                         <tr>
                             <td>{{ $placement->cerita->judul ?? '-' }}</td>
                             <td>{{ ($placement->placement_position ?? 'after') === 'before' ? 'Sebelum' : 'Setelah' }}</td>
@@ -91,6 +91,11 @@
                     </tbody>
                 </table>
             </div>
+            @if($placements->hasPages())
+                <div class="card-footer d-flex justify-content-end">
+                    {{ $placements->links() }}
+                </div>
+            @endif
         </div>
     </div>
 </div>

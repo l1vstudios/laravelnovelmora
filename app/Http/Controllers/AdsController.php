@@ -105,9 +105,21 @@ class AdsController extends Controller
 
     public function show(Ad $ad)
     {
-        $ad->load(['placements.cerita']);
+        $placements = $ad->placements()
+            ->select([
+                'id',
+                'ad_id',
+                'cerita_id',
+                'after_chapter',
+                'placement_position',
+                'is_global',
+                'sort_order',
+            ])
+            ->with('cerita:id,judul')
+            ->paginate(25)
+            ->withQueryString();
 
-        return view('content.ads.show', compact('ad'));
+        return view('content.ads.show', compact('ad', 'placements'));
     }
 
     public function edit(Ad $ad)
