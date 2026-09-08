@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class EarningController extends Controller
 {
+    //test
     public function index(Request $request)
     {
         $type = $request->input('type'); // 'paket', 'koin', or null (all)
