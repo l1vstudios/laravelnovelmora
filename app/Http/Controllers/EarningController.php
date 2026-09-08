@@ -20,7 +20,7 @@ class EarningController extends Controller
 
         // Query trx_buy_paket
         $paketQuery = DB::table('trx_buy_paket')
-            ->join('mst_users', 'trx_buy_paket.user_id', '=', 'mst_users.id')
+            ->leftJoin('mst_users', 'trx_buy_paket.user_id', '=', 'mst_users.id')
             ->select(
                 'trx_buy_paket.id',
                 DB::raw("'paket' as type"),
@@ -38,7 +38,7 @@ class EarningController extends Controller
 
         // Query trx_buy_koin
         $koinQuery = DB::table('trx_buy_koin')
-            ->join('mst_users', 'trx_buy_koin.user_id', '=', 'mst_users.id')
+            ->leftJoin('mst_users', 'trx_buy_koin.user_id', '=', 'mst_users.id')
             ->select(
                 'trx_buy_koin.id',
                 DB::raw("'koin' as type"),

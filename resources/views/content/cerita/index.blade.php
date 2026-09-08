@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const categoryItems = document.querySelectorAll('[data-category-option]');
     const hasErrors = @json($errors->any());
     const oldFormType = @json(old('form_type'));
+    const ceritaOptionsUrl = @json(route('cerita.options'));
 
     function syncStoryPicker(scopeAllInput, selectInput, searchInput) {
         if (!scopeAllInput || !selectInput) {
@@ -42,21 +43,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (scopeAllInput.checked) {
             Array.from(selectInput.options).forEach((option) => {
                 option.selected = false;
-                option.hidden = false;
             });
         }
-    }
-
-    function filterStoryPicker(scopeAllInput, selectInput, searchInput) {
-        if (!scopeAllInput || !selectInput || !searchInput || scopeAllInput.checked) {
-            return;
-        }
-
-        const needle = searchInput.value.trim().toLowerCase();
-
-        Array.from(selectInput.options).forEach((option) => {
-            option.hidden = needle && !option.textContent.toLowerCase().includes(needle);
-        });
     }
 
     function syncActionButton() {
@@ -94,6 +82,146 @@ document.addEventListener('DOMContentLoaded', function () {
         bulkSubmitButton.classList.toggle('btn-primary', selectedAction !== 'disable');
     }
 
+    function storyOptionLabel(story, includeParts) {
+        const title = story.judul || story.title || '';
+        const parts = Number(story.parts || 0);
+
+        return includeParts ? `${title} (${parts} chapter)` : title;
+    }
+
+    function pickerState(selectInput) {
+        if (selectInput._storyPickerState) {
+            return selectInput._storyPickerState;
+        }
+
+        const selected = new Map();
+
+        Array.from(selectInput.options).forEach((option) => {
+            if (!option.selected) {
+                return;
+            }
+
+            selected.set(String(option.value), {
+                id: option.value,
+                judul: option.dataset.judul || option.textContent.trim(),
+                parts: option.dataset.parts || 0,
+            });
+        });
+
+        selectInput._storyPickerState = { selected, loaded: false };
+
+        return selectInput._storyPickerState;
+    }
+
+    function syncSelectedStories(selectInput) {
+        const state = pickerState(selectInput);
+
+        Array.from(selectInput.options).forEach((option) => {
+            const id = String(option.value);
+
+            if (option.selected) {
+                state.selected.set(id, {
+                    id,
+                    judul: option.dataset.judul || option.textContent.trim(),
+                    parts: option.dataset.parts || 0,
+                });
+            } else {
+                state.selected.delete(id);
+            }
+        });
+    }
+
+    function renderStoryOptions(selectInput, stories, includeParts) {
+        const state = pickerState(selectInput);
+        const merged = new Map(state.selected);
+
+        stories.forEach((story) => {
+            const id = String(story.id);
+
+            if (!merged.has(id)) {
+                merged.set(id, story);
+            }
+        });
+
+        selectInput.innerHTML = '';
+
+        if (!merged.size) {
+            const option = new Option('Tidak ada cerita ditemukan', '');
+            option.disabled = true;
+            selectInput.appendChild(option);
+            return;
+        }
+
+        merged.forEach((story) => {
+            const id = String(story.id);
+            const option = new Option(storyOptionLabel(story, includeParts), id, false, state.selected.has(id));
+            option.dataset.judul = story.judul || story.title || '';
+            option.dataset.parts = story.parts || 0;
+            selectInput.appendChild(option);
+        });
+    }
+
+    function setupAsyncStoryPicker(scopeAllInput, selectInput, searchInput, modalInput, includeParts) {
+        if (!scopeAllInput || !selectInput) {
+            return;
+        }
+
+        const state = pickerState(selectInput);
+        let timer = null;
+
+        async function loadOptions() {
+            if (scopeAllInput.checked) {
+                return;
+            }
+
+            const params = new URLSearchParams({ limit: '20' });
+            const keyword = searchInput?.value.trim() || '';
+
+            if (keyword) {
+                params.set('q', keyword);
+            }
+
+            const response = await fetch(`${ceritaOptionsUrl}?${params.toString()}`, {
+                headers: { Accept: 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error('Gagal memuat daftar cerita.');
+            }
+
+            const payload = await response.json();
+            renderStoryOptions(selectInput, payload.data || [], includeParts);
+            state.loaded = true;
+        }
+
+        scopeAllInput.addEventListener('change', () => {
+            syncStoryPicker(scopeAllInput, selectInput, searchInput);
+
+            if (!scopeAllInput.checked && !state.loaded) {
+                loadOptions().catch(() => {});
+            }
+        });
+
+        selectInput.addEventListener('change', () => syncSelectedStories(selectInput));
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    loadOptions().catch(() => {});
+                }, 250);
+            });
+        }
+
+        modalInput?.addEventListener('shown.bs.modal', () => {
+            if (!state.loaded) {
+                loadOptions().catch(() => {});
+            }
+        });
+
+        syncStoryPicker(scopeAllInput, selectInput, searchInput);
+    }
+
     function filterCategoryOptions() {
         if (!categorySearch) {
             return;
@@ -108,25 +236,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (scopeAll && storySelect) {
-        scopeAll.addEventListener('change', () => syncStoryPicker(scopeAll, storySelect, storySearch));
-        if (storySearch) {
-            storySearch.addEventListener('input', () => filterStoryPicker(scopeAll, storySelect, storySearch));
-        }
+        setupAsyncStoryPicker(scopeAll, storySelect, storySearch, globalLockModal, true);
         actionInputs.forEach((input) => input.addEventListener('change', syncActionButton));
-        syncStoryPicker(scopeAll, storySelect, storySearch);
-        filterStoryPicker(scopeAll, storySelect, storySearch);
         syncActionButton();
     }
 
     if (bulkScopeAll && bulkStorySelect) {
-        bulkScopeAll.addEventListener('change', () => syncStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch));
-        if (bulkStorySearch) {
-            bulkStorySearch.addEventListener('input', () => filterStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch));
-        }
+        setupAsyncStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch, bulkPilihanModal, false);
         bulkFieldInputs.forEach((input) => input.addEventListener('change', syncBulkButton));
         bulkActionInputs.forEach((input) => input.addEventListener('change', syncBulkButton));
-        syncStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch);
-        filterStoryPicker(bulkScopeAll, bulkStorySelect, bulkStorySearch);
         syncBulkButton();
     }
 
@@ -386,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                @if($lockCeritas->isEmpty())
+                @if(! $hasCeritas)
                     <div class="alert alert-info mb-0">Belum ada cerita untuk di-lock.</div>
                 @else
                     <form method="POST" action="{{ route('cerita.global-lock') }}" id="global-lock-form" class="row g-4">
@@ -425,12 +543,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             <input type="text" id="global-lock-story-search" class="form-control mb-2"
                                 placeholder="Cari judul novel..." autocomplete="off">
                             <select id="global-lock-stories" name="cerita_ids[]" class="form-select" multiple size="7">
-                                @foreach($lockCeritas as $lockCerita)
-                                    @php
-                                        $chapterTotal = max((int) $lockCerita->parts, count($lockCerita->isi_cerita ?? []));
-                                    @endphp
-                                    <option value="{{ $lockCerita->id }}" {{ collect(old('cerita_ids', []))->contains($lockCerita->id) ? 'selected' : '' }}>
-                                        {{ $lockCerita->judul }} ({{ $chapterTotal }} chapter)
+                                @foreach(old('form_type') === 'global-lock' ? $selectedCeritas : collect() as $selectedCerita)
+                                    <option value="{{ $selectedCerita->id }}" selected
+                                        data-judul="{{ $selectedCerita->judul }}"
+                                        data-parts="{{ (int) $selectedCerita->parts }}">
+                                        {{ $selectedCerita->judul }} ({{ (int) $selectedCerita->parts }} chapter)
                                     </option>
                                 @endforeach
                             </select>
@@ -451,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </form>
                 @endif
             </div>
-            @if($lockCeritas->isNotEmpty())
+            @if($hasCeritas)
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" form="global-lock-form" id="global-lock-submit" class="btn btn-primary">
@@ -471,7 +588,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                @if($bulkCeritas->isEmpty())
+                @if(! $hasCeritas)
                     <div class="alert alert-info mb-0">Belum ada cerita untuk dipilih.</div>
                 @else
                     <form method="POST" action="{{ route('cerita.bulk-pilihan') }}" id="bulk-pilihan-form" class="row g-4">
@@ -527,9 +644,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             <input type="text" id="bulk-pilihan-story-search" class="form-control mb-2"
                                 placeholder="Cari judul cerita..." autocomplete="off">
                             <select id="bulk-pilihan-stories" name="cerita_ids[]" class="form-select" multiple size="8">
-                                @foreach($bulkCeritas as $bulkCerita)
-                                    <option value="{{ $bulkCerita->id }}" {{ collect(old('cerita_ids', []))->contains($bulkCerita->id) ? 'selected' : '' }}>
-                                        {{ $bulkCerita->judul }}
+                                @foreach(old('form_type') === 'bulk-pilihan' ? $selectedCeritas : collect() as $selectedCerita)
+                                    <option value="{{ $selectedCerita->id }}" selected
+                                        data-judul="{{ $selectedCerita->judul }}"
+                                        data-parts="{{ (int) $selectedCerita->parts }}">
+                                        {{ $selectedCerita->judul }}
                                     </option>
                                 @endforeach
                             </select>
@@ -538,7 +657,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </form>
                 @endif
             </div>
-            @if($bulkCeritas->isNotEmpty())
+            @if($hasCeritas)
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" form="bulk-pilihan-form" id="bulk-pilihan-submit" class="btn btn-primary">

@@ -15,7 +15,22 @@ class CeritaController extends Controller
 
     public function index(Request $request)
     {
-        $query = Cerita::with('kategori');
+        $query = Cerita::query()
+            ->select([
+                'id',
+                'judul',
+                'cover',
+                'id_kategori',
+                'positions_index',
+                'parts',
+                'total_read',
+                'total_vote',
+                'status',
+                'recomendation',
+                'wajib_dibaca',
+                'created_at',
+            ])
+            ->with('kategori:id,default_title');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status === '1');
@@ -44,11 +59,32 @@ class CeritaController extends Controller
         ]);
 
         $ceritas = $query->paginate(10)->withQueryString();
-        $lockCeritas = Cerita::orderBy('judul')->get(['id', 'judul', 'parts', 'isi_cerita']);
-        $bulkCeritas = Cerita::orderBy('judul')->get(['id', 'judul']);
+        $selectedCeritas = $this->selectedCeritaOptions($request->old('cerita_ids', []));
+        $hasCeritas = Cerita::query()->exists();
         $kategoris = Kategori::orderBy('default_title')->get(['id', 'default_title']);
 
-        return view('content.cerita.index', compact('ceritas', 'lockCeritas', 'bulkCeritas', 'kategoris'));
+        return view('content.cerita.index', compact('ceritas', 'selectedCeritas', 'hasCeritas', 'kategoris'));
+    }
+
+    public function options(Request $request)
+    {
+        $request->validate([
+            'q' => 'nullable|string|max:255',
+            'limit' => 'nullable|integer|min:1|max:50',
+        ]);
+
+        $query = Cerita::query()
+            ->select(['id', 'judul', 'parts'])
+            ->orderBy('judul');
+
+        if ($request->filled('q')) {
+            $judul = mb_strtolower(trim($request->q));
+            $query->whereRaw('LOWER(judul) LIKE ?', ["%{$judul}%"]);
+        }
+
+        return response()->json([
+            'data' => $query->limit($request->integer('limit', 20))->get(),
+        ]);
     }
 
     public function create()
@@ -224,7 +260,8 @@ class CeritaController extends Controller
         $end = max((int) $data['chapter_start'], (int) $data['chapter_end']);
         $targetLockState = $data['lock_action'] === 'lock';
 
-        $query = Cerita::query();
+        $query = Cerita::query()
+            ->select(['id', 'parts', 'lock']);
 
         if ($data['lock_scope'] === 'selected') {
             $query->whereIn('id', $data['cerita_ids']);
@@ -235,7 +272,7 @@ class CeritaController extends Controller
 
         $query->chunkById(100, function ($ceritas) use ($start, $end, $targetLockState, &$updatedStories, &$updatedChapters) {
             foreach ($ceritas as $cerita) {
-                $chapterTotal = max((int) $cerita->parts, count($cerita->isi_cerita ?? []));
+                $chapterTotal = max((int) $cerita->parts, 0);
 
                 if ($chapterTotal < 1) {
                     continue;
@@ -433,5 +470,24 @@ class CeritaController extends Controller
         $content = preg_replace('/<p>\s*<\/p>/i', '', $content) ?? $content;
 
         return trim($content);
+    }
+
+    private function selectedCeritaOptions(mixed $ids)
+    {
+        $ids = collect((array) $ids)
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        return Cerita::query()
+            ->select(['id', 'judul', 'parts'])
+            ->whereIn('id', $ids)
+            ->orderBy('judul')
+            ->get();
     }
 }

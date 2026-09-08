@@ -52,6 +52,8 @@ Route::middleware('auth')->group(function () {
             ->name('cerita.global-lock');
         Route::put('cerita/bulk-pilihan', [CeritaController::class, 'bulkPilihan'])
             ->name('cerita.bulk-pilihan');
+        Route::get('cerita/options', [CeritaController::class, 'options'])
+            ->name('cerita.options');
 
         Route::resource('cerita', CeritaController::class)
             ->parameters(['cerita' => 'cerita']);
