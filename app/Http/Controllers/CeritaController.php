@@ -92,7 +92,12 @@ class CeritaController extends Controller
             $query->whereRaw('LOWER(judul) LIKE ?', ["%{$judul}%"]);
         }
 
-        $ceritas = $query->paginate($request->integer('per_page', 5));
+        $ceritas = $query->paginate(
+            $request->integer('per_page', 5),
+            ['*'],
+            'page',
+            $request->integer('page', 1)
+        );
 
         return response()->json([
             'data' => $ceritas->items(),

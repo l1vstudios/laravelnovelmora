@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const scopeAll = document.getElementById('global-lock-all');
     const storyList = document.getElementById('global-lock-stories');
     const storySearch = document.getElementById('global-lock-story-search');
+    const storySearchButton = document.getElementById('global-lock-story-search-button');
+    const storyResetButton = document.getElementById('global-lock-story-reset-button');
     const storyPager = document.getElementById('global-lock-story-pager');
     const storyHidden = document.getElementById('global-lock-selected-stories');
     const storyCount = document.getElementById('global-lock-story-count');
@@ -16,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const bulkScopeAll = document.getElementById('bulk-pilihan-all');
     const bulkStoryList = document.getElementById('bulk-pilihan-stories');
     const bulkStorySearch = document.getElementById('bulk-pilihan-story-search');
+    const bulkStorySearchButton = document.getElementById('bulk-pilihan-story-search-button');
+    const bulkStoryResetButton = document.getElementById('bulk-pilihan-story-reset-button');
     const bulkStoryPager = document.getElementById('bulk-pilihan-story-pager');
     const bulkStoryHidden = document.getElementById('bulk-pilihan-selected-stories');
     const bulkStoryCount = document.getElementById('bulk-pilihan-story-count');
@@ -152,6 +156,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function renderStoryMessage(listInput, message, className = 'text-muted') {
+        listInput.innerHTML = '';
+
+        const item = document.createElement('div');
+        item.className = `list-group-item text-center py-4 ${className}`;
+        item.textContent = message;
+        listInput.appendChild(item);
+    }
+
     function renderStoryPager(pagerInput, state) {
         if (!pagerInput) {
             return;
@@ -163,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function () {
         pagerInput.querySelector('[data-story-page-label]').textContent = `Halaman ${state.currentPage} / ${state.lastPage}`;
     }
 
-    function setupPaginatedStoryPicker(scopeAllInput, listInput, searchInput, pagerInput, hiddenInput, countInput, modalInput, includeParts) {
+    function setupPaginatedStoryPicker(scopeAllInput, listInput, searchInput, searchButton, resetButton, pagerInput, hiddenInput, countInput, modalInput, includeParts) {
         if (!scopeAllInput || !listInput || !hiddenInput) {
             return;
         }
@@ -176,6 +189,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            state.currentPage = page;
+            renderStoryPager(pagerInput, state);
+            renderStoryMessage(listInput, 'Memuat cerita...');
+
             const params = new URLSearchParams({ page: String(page), per_page: '5' });
             const keyword = searchInput?.value.trim() || '';
 
@@ -184,7 +201,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const response = await fetch(`${ceritaOptionsUrl}?${params.toString()}`, {
-                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
             });
 
             if (!response.ok) {
@@ -214,6 +235,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (searchInput) {
                 searchInput.disabled = isAll;
                 searchInput.value = isAll ? '' : searchInput.value;
+            }
+
+            if (searchButton) {
+                searchButton.disabled = isAll;
+            }
+
+            if (resetButton) {
+                resetButton.disabled = isAll;
             }
 
             if (pagerInput) {
@@ -255,25 +284,71 @@ document.addEventListener('DOMContentLoaded', function () {
         scopeAllInput.addEventListener('change', syncScope);
 
         if (searchInput) {
+            searchInput.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+                event.preventDefault();
+                loadOptions(1).catch(() => {
+                    renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
+                });
+            });
+
             searchInput.addEventListener('input', () => {
                 clearTimeout(timer);
                 timer = setTimeout(() => {
-                    loadOptions(1).catch(() => {});
+                    loadOptions(1).catch(() => {
+                        renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
+                    });
                 }, 250);
             });
         }
 
-        pagerInput?.querySelector('[data-story-prev]')?.addEventListener('click', () => {
-            loadOptions(Math.max(1, state.currentPage - 1)).catch(() => {});
+        searchButton?.addEventListener('click', () => {
+            loadOptions(1).catch(() => {
+                renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
+            });
         });
 
-        pagerInput?.querySelector('[data-story-next]')?.addEventListener('click', () => {
-            loadOptions(Math.min(state.lastPage, state.currentPage + 1)).catch(() => {});
+        resetButton?.addEventListener('click', () => {
+            if (searchInput) {
+                searchInput.value = '';
+            }
+
+            loadOptions(1).catch(() => {
+                renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
+            });
+        });
+
+        pagerInput?.addEventListener('click', (event) => {
+            const prevButton = event.target.closest('[data-story-prev]');
+            const nextButton = event.target.closest('[data-story-next]');
+
+            if (!prevButton && !nextButton) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (prevButton?.disabled || nextButton?.disabled) {
+                return;
+            }
+
+            const nextPage = prevButton
+                ? Math.max(1, state.currentPage - 1)
+                : Math.min(state.lastPage, state.currentPage + 1);
+
+            loadOptions(nextPage).catch(() => {
+                renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
+            });
         });
 
         modalInput?.addEventListener('shown.bs.modal', () => {
             if (!state.loaded) {
-                loadOptions(1).catch(() => {});
+                loadOptions(1).catch(() => {
+                    renderStoryMessage(listInput, 'Gagal memuat cerita. Coba refresh halaman.', 'text-danger');
+                });
             }
         });
 
@@ -296,13 +371,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (scopeAll && storyList) {
-        setupPaginatedStoryPicker(scopeAll, storyList, storySearch, storyPager, storyHidden, storyCount, globalLockModal, true);
+        setupPaginatedStoryPicker(scopeAll, storyList, storySearch, storySearchButton, storyResetButton, storyPager, storyHidden, storyCount, globalLockModal, true);
         actionInputs.forEach((input) => input.addEventListener('change', syncActionButton));
         syncActionButton();
     }
 
     if (bulkScopeAll && bulkStoryList) {
-        setupPaginatedStoryPicker(bulkScopeAll, bulkStoryList, bulkStorySearch, bulkStoryPager, bulkStoryHidden, bulkStoryCount, bulkPilihanModal, false);
+        setupPaginatedStoryPicker(bulkScopeAll, bulkStoryList, bulkStorySearch, bulkStorySearchButton, bulkStoryResetButton, bulkStoryPager, bulkStoryHidden, bulkStoryCount, bulkPilihanModal, false);
         bulkFieldInputs.forEach((input) => input.addEventListener('change', syncBulkButton));
         bulkActionInputs.forEach((input) => input.addEventListener('change', syncBulkButton));
         syncBulkButton();
@@ -600,8 +675,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         <div class="col-12">
                             <label for="global-lock-stories" class="form-label">Judul Novel</label>
-                            <input type="text" id="global-lock-story-search" class="form-control mb-2"
-                                placeholder="Cari judul novel..." autocomplete="off">
+                            <div class="input-group mb-2">
+                                <input type="text" id="global-lock-story-search" class="form-control"
+                                    placeholder="Cari judul novel..." autocomplete="off">
+                                <button type="button" id="global-lock-story-search-button" class="btn btn-outline-primary">
+                                    <i class="icon-base bx bx-search me-1"></i> Cari
+                                </button>
+                                <button type="button" id="global-lock-story-reset-button" class="btn btn-outline-secondary">
+                                    Reset
+                                </button>
+                            </div>
                             @php
                                 $selectedStoryIds = collect(old('cerita_ids', []))->map(fn ($id) => (string) $id);
                             @endphp
@@ -716,8 +799,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         <div class="col-12">
                             <label for="bulk-pilihan-stories" class="form-label">Judul Cerita</label>
-                            <input type="text" id="bulk-pilihan-story-search" class="form-control mb-2"
-                                placeholder="Cari judul cerita..." autocomplete="off">
+                            <div class="input-group mb-2">
+                                <input type="text" id="bulk-pilihan-story-search" class="form-control"
+                                    placeholder="Cari judul cerita..." autocomplete="off">
+                                <button type="button" id="bulk-pilihan-story-search-button" class="btn btn-outline-primary">
+                                    <i class="icon-base bx bx-search me-1"></i> Cari
+                                </button>
+                                <button type="button" id="bulk-pilihan-story-reset-button" class="btn btn-outline-secondary">
+                                    Reset
+                                </button>
+                            </div>
                             @php
                                 $selectedStoryIds = collect(old('cerita_ids', []))->map(fn ($id) => (string) $id);
                             @endphp
