@@ -14,7 +14,22 @@ class AdsController extends Controller
 
     public function index(Request $request)
     {
-        $query = Ad::withCount('placements');
+        if ($request->boolean('story_options')) {
+            return $this->storyOptionsResponse($request);
+        }
+
+        $query = Ad::query()
+            ->select([
+                'id',
+                'title',
+                'media_type',
+                'media_url',
+                'media_path',
+                'target_url',
+                'status',
+                'created_at',
+            ])
+            ->withCount('placements');
 
         if ($request->filled('media_type')) {
             $query->where('media_type', $request->media_type);
@@ -33,9 +48,16 @@ class AdsController extends Controller
 
         $ads = $query->paginate(10)->withQueryString();
         $globalAds = Ad::orderBy('title')->get(['id', 'title', 'media_type', 'status']);
-        $globalCeritas = $this->getPlacementCeritas();
+        $selectedCeritas = $this->selectedCeritaOptions($request->old('cerita_ids', []));
+        $initialCeritas = $this->initialCeritaOptions($selectedCeritas->pluck('id')->all());
+        $storyPickerTotal = Cerita::query()->count();
+        $storyPickerLastPage = max(1, (int) ceil($storyPickerTotal / 5));
+        $globalCeritas = $request->old('form_type') === 'global-ads'
+            ? $selectedCeritas->concat($initialCeritas)->unique('id')->values()
+            : $initialCeritas;
+        $hasCeritas = $storyPickerTotal > 0;
 
-        return view('content.ads.index', compact('ads', 'globalAds', 'globalCeritas'));
+        return view('content.ads.index', compact('ads', 'globalAds', 'globalCeritas', 'storyPickerLastPage', 'hasCeritas'));
     }
 
     public function create()
@@ -184,13 +206,14 @@ class AdsController extends Controller
         $adIds = collect($data['ad_ids'])->map(fn ($id) => (int) $id)->unique()->values();
         $position = $data['placement_position'];
 
-        $query = Cerita::query();
+        $query = Cerita::query()
+            ->select(['id', 'parts']);
 
         if ($data['global_scope'] === 'selected') {
             $query->whereIn('id', $data['cerita_ids']);
         }
 
-        $targetCeritas = $query->get(['id', 'parts', 'isi_cerita']);
+        $targetCeritas = $query->get();
         $targetStoryIds = $targetCeritas->pluck('id');
 
         if ($targetStoryIds->isEmpty()) {
@@ -219,7 +242,7 @@ class AdsController extends Controller
         $updatedPlacements = 0;
 
         foreach ($targetCeritas as $cerita) {
-            $chapterTotal = max((int) $cerita->parts, count($cerita->isi_cerita ?? []));
+            $chapterTotal = max((int) $cerita->parts, 0);
             $storyHasPlacement = false;
 
             for ($chapter = $start; $chapter <= min($end, $chapterTotal); $chapter++) {
@@ -255,7 +278,71 @@ class AdsController extends Controller
 
     private function getPlacementCeritas()
     {
-        return Cerita::orderBy('judul')->get(['id', 'judul', 'parts', 'isi_cerita']);
+        return Cerita::orderBy('judul')->get(['id', 'judul', 'parts']);
+    }
+
+    private function storyOptionsResponse(Request $request)
+    {
+        $request->validate([
+            'q' => 'nullable|string|max:255',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:5',
+        ]);
+
+        $query = Cerita::query()
+            ->select(['id', 'judul', 'parts'])
+            ->orderBy('judul');
+
+        if ($request->filled('q')) {
+            $judul = mb_strtolower(trim($request->q));
+            $query->whereRaw('LOWER(judul) LIKE ?', ["%{$judul}%"]);
+        }
+
+        $ceritas = $query->paginate(
+            $request->integer('per_page', 5),
+            ['*'],
+            'page',
+            $request->integer('page', 1)
+        );
+
+        return response()->json([
+            'data' => $ceritas->items(),
+            'meta' => [
+                'current_page' => $ceritas->currentPage(),
+                'last_page' => $ceritas->lastPage(),
+                'per_page' => $ceritas->perPage(),
+                'total' => $ceritas->total(),
+            ],
+        ]);
+    }
+
+    private function selectedCeritaOptions(mixed $ids)
+    {
+        $ids = collect((array) $ids)
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        return Cerita::query()
+            ->select(['id', 'judul', 'parts'])
+            ->whereIn('id', $ids)
+            ->orderBy('judul')
+            ->get();
+    }
+
+    private function initialCeritaOptions(array $excludedIds)
+    {
+        return Cerita::query()
+            ->select(['id', 'judul', 'parts'])
+            ->when($excludedIds !== [], fn ($query) => $query->whereNotIn('id', $excludedIds))
+            ->orderBy('judul')
+            ->limit(5)
+            ->get();
     }
 
     private function syncPlacements(Ad $ad, Request $request): void
@@ -272,7 +359,7 @@ class AdsController extends Controller
             return;
         }
 
-        $ceritas = Cerita::whereIn('id', $ceritaIds)->get(['id', 'parts', 'isi_cerita'])->keyBy('id');
+        $ceritas = Cerita::whereIn('id', $ceritaIds)->get(['id', 'parts'])->keyBy('id');
         $placements = [];
         $now = now();
         $sortOrder = 0;
@@ -286,7 +373,7 @@ class AdsController extends Controller
                 continue;
             }
 
-            $chapterTotal = max((int) $cerita->parts, count($cerita->isi_cerita ?? []));
+            $chapterTotal = max((int) $cerita->parts, 0);
 
             foreach ($positions as $position => $chapters) {
                 if (! in_array($position, ['before', 'after'], true) || ! is_array($chapters)) {

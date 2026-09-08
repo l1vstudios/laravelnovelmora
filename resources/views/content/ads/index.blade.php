@@ -6,33 +6,20 @@
 document.addEventListener('DOMContentLoaded', function () {
     const globalAdsModal = document.getElementById('global-ads-modal');
     const scopeAll = document.getElementById('global-ads-all');
-    const storySelect = document.getElementById('global-ads-stories');
+    const storyList = document.getElementById('global-ads-stories');
     const storySearch = document.getElementById('global-ads-story-search');
+    const storySearchButton = document.getElementById('global-ads-story-search-button');
+    const storyResetButton = document.getElementById('global-ads-story-reset-button');
+    const storyPager = document.getElementById('global-ads-story-pager');
+    const storyHidden = document.getElementById('global-ads-selected-stories');
+    const storyCount = document.getElementById('global-ads-story-count');
     const adSelect = document.getElementById('global-ads-list');
     const adSearch = document.getElementById('global-ads-search');
     const actionInputs = document.querySelectorAll('input[name="global_action"]');
     const submitButton = document.getElementById('global-ads-submit');
     const hasErrors = @json($errors->any());
     const oldFormType = @json(old('form_type'));
-
-    function syncStoryPicker() {
-        if (!scopeAll || !storySelect) return;
-
-        storySelect.disabled = scopeAll.checked;
-        storySelect.required = !scopeAll.checked;
-
-        if (storySearch) {
-            storySearch.disabled = scopeAll.checked;
-            storySearch.value = scopeAll.checked ? '' : storySearch.value;
-        }
-
-        if (scopeAll.checked) {
-            Array.from(storySelect.options).forEach((option) => {
-                option.selected = false;
-                option.hidden = false;
-            });
-        }
-    }
+    const storyOptionsUrl = @json(route('ads.index', [], false));
 
     function filterSelect(selectInput, searchInput) {
         if (!selectInput || !searchInput) return;
@@ -55,14 +42,268 @@ document.addEventListener('DOMContentLoaded', function () {
         submitButton.classList.toggle('btn-primary', selectedAction !== 'remove');
     }
 
-    if (scopeAll && storySelect) {
+    function storyLabel(story) {
+        return `${story.judul || story.title || ''} (${Number(story.parts || 0)} chapter)`;
+    }
+
+    function pickerState(listInput) {
+        if (listInput._storyPickerState) {
+            return listInput._storyPickerState;
+        }
+
+        const selected = new Map();
+
+        listInput.querySelectorAll('[data-story-checkbox]:checked').forEach((checkbox) => {
+            selected.set(String(checkbox.value), {
+                id: checkbox.value,
+                judul: checkbox.dataset.judul || '',
+                parts: checkbox.dataset.parts || 0,
+            });
+        });
+
+        listInput._storyPickerState = {
+            selected,
+            currentPage: Number(listInput.dataset.currentPage || 1),
+            lastPage: Number(listInput.dataset.lastPage || 1),
+            loaded: listInput.children.length > 0,
+        };
+
+        return listInput._storyPickerState;
+    }
+
+    function syncHiddenStories(state) {
+        if (!storyHidden) return;
+
+        storyHidden.innerHTML = '';
+
+        state.selected.forEach((story) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'cerita_ids[]';
+            input.value = story.id;
+            storyHidden.appendChild(input);
+        });
+
+        if (storyCount) {
+            storyCount.textContent = `${state.selected.size} dipilih`;
+        }
+    }
+
+    function renderStoryRows(stories) {
+        if (!storyList) return;
+
+        const state = pickerState(storyList);
+        storyList.innerHTML = '';
+
+        if (!stories.length) {
+            renderStoryMessage('Tidak ada cerita ditemukan.');
+            return;
+        }
+
+        stories.forEach((story) => {
+            const id = String(story.id);
+            const label = document.createElement('label');
+            label.className = 'list-group-item d-flex align-items-center gap-3';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'form-check-input m-0';
+            checkbox.value = id;
+            checkbox.checked = state.selected.has(id);
+            checkbox.dataset.storyCheckbox = '1';
+            checkbox.dataset.judul = story.judul || story.title || '';
+            checkbox.dataset.parts = story.parts || 0;
+
+            const text = document.createElement('span');
+            text.className = 'flex-grow-1';
+            text.textContent = storyLabel(story);
+
+            label.appendChild(checkbox);
+            label.appendChild(text);
+            storyList.appendChild(label);
+        });
+    }
+
+    function renderStoryMessage(message, className = 'text-muted') {
+        if (!storyList) return;
+
+        storyList.innerHTML = '';
+
+        const item = document.createElement('div');
+        item.className = `list-group-item text-center py-4 ${className}`;
+        item.textContent = message;
+        storyList.appendChild(item);
+    }
+
+    function renderStoryPager(state) {
+        if (!storyPager) return;
+
+        storyPager.querySelector('[data-story-prev]').disabled = state.currentPage <= 1;
+        storyPager.querySelector('[data-story-next]').disabled = state.currentPage >= state.lastPage;
+        storyPager.querySelector('[data-story-page-label]').disabled = true;
+        storyPager.querySelector('[data-story-page-label]').textContent = `Halaman ${state.currentPage} / ${state.lastPage}`;
+    }
+
+    function showLoadError(error) {
+        const detail = error?.message ? ` (${error.message})` : '';
+        renderStoryMessage(`Gagal memuat cerita${detail}.`, 'text-danger');
+    }
+
+    async function loadStories(page = 1) {
+        if (!storyList || scopeAll?.checked) return;
+
+        const state = pickerState(storyList);
+        state.currentPage = page;
+        renderStoryPager(state);
+        renderStoryMessage('Memuat cerita...');
+
+        const params = new URLSearchParams({ story_options: '1', page: String(page), per_page: '5' });
+        const keyword = storySearch?.value.trim() || '';
+
+        if (keyword) {
+            params.set('q', keyword);
+        }
+
+        const response = await fetch(`${storyOptionsUrl}?${params.toString()}`, {
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+
+        if (!contentType.includes('application/json')) {
+            throw new Error('response bukan JSON');
+        }
+
+        const payload = await response.json();
+        const meta = payload.meta || {};
+
+        state.currentPage = Number(meta.current_page || page);
+        state.lastPage = Number(meta.last_page || 1);
+        state.loaded = true;
+
+        renderStoryRows(payload.data || []);
+        renderStoryPager(state);
+        syncHiddenStories(state);
+    }
+
+    function syncStoryPicker() {
+        if (!scopeAll || !storyList) return;
+
+        const state = pickerState(storyList);
+        const isAll = scopeAll.checked;
+
+        storyList.classList.toggle('opacity-50', isAll);
+        storyList.querySelectorAll('[data-story-checkbox]').forEach((checkbox) => {
+            checkbox.disabled = isAll;
+            checkbox.checked = false;
+        });
+
+        if (storySearch) {
+            storySearch.disabled = isAll;
+            storySearch.value = isAll ? '' : storySearch.value;
+        }
+
+        if (storySearchButton) {
+            storySearchButton.disabled = isAll;
+        }
+
+        if (storyResetButton) {
+            storyResetButton.disabled = isAll;
+        }
+
+        if (storyPager) {
+            renderStoryPager(state);
+            storyPager.querySelectorAll('button').forEach((button) => {
+                button.disabled = isAll || button.disabled;
+            });
+        }
+
+        if (isAll) {
+            state.selected.clear();
+        }
+
+        syncHiddenStories(state);
+    }
+
+    if (scopeAll && storyList) {
+        const state = pickerState(storyList);
+        let timer = null;
+
         scopeAll.addEventListener('change', syncStoryPicker);
-        storySearch?.addEventListener('input', () => filterSelect(storySelect, storySearch));
+        storyList.addEventListener('change', (event) => {
+            const checkbox = event.target.closest('[data-story-checkbox]');
+
+            if (!checkbox) return;
+
+            const id = String(checkbox.value);
+
+            if (checkbox.checked) {
+                state.selected.set(id, {
+                    id,
+                    judul: checkbox.dataset.judul || '',
+                    parts: checkbox.dataset.parts || 0,
+                });
+            } else {
+                state.selected.delete(id);
+            }
+
+            syncHiddenStories(state);
+        });
+        storySearch?.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') return;
+
+            event.preventDefault();
+            loadStories(1).catch(showLoadError);
+        });
+        storySearch?.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                loadStories(1).catch(showLoadError);
+            }, 250);
+        });
+        storySearchButton?.addEventListener('click', () => loadStories(1).catch(showLoadError));
+        storyResetButton?.addEventListener('click', () => {
+            if (storySearch) {
+                storySearch.value = '';
+            }
+
+            loadStories(1).catch(showLoadError);
+        });
+        storyPager?.addEventListener('click', (event) => {
+            const prevButton = event.target.closest('[data-story-prev]');
+            const nextButton = event.target.closest('[data-story-next]');
+
+            if (!prevButton && !nextButton) return;
+
+            event.preventDefault();
+
+            if (prevButton?.disabled || nextButton?.disabled) return;
+
+            const nextPage = prevButton
+                ? Math.max(1, state.currentPage - 1)
+                : Math.min(state.lastPage, state.currentPage + 1);
+
+            loadStories(nextPage).catch(showLoadError);
+        });
+        globalAdsModal?.addEventListener('shown.bs.modal', () => {
+            if (!state.loaded) {
+                loadStories(1).catch(showLoadError);
+            }
+        });
         adSearch?.addEventListener('input', () => filterSelect(adSelect, adSearch));
         actionInputs.forEach((input) => input.addEventListener('change', syncSubmitButton));
         syncStoryPicker();
-        filterSelect(storySelect, storySearch);
         filterSelect(adSelect, adSearch);
+        renderStoryPager(state);
+        syncHiddenStories(state);
         syncSubmitButton();
     }
 
@@ -210,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                @if($globalAds->isEmpty() || $globalCeritas->isEmpty())
+                @if($globalAds->isEmpty() || ! $hasCeritas)
                     <div class="alert alert-info mb-0">Master ads atau cerita belum tersedia.</div>
                 @else
                     <form method="POST" action="{{ route('ads.global-placements') }}" id="global-ads-form" class="row g-4">
@@ -268,19 +509,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         <div class="col-12">
                             <label for="global-ads-stories" class="form-label">Judul Cerita</label>
-                            <input type="text" id="global-ads-story-search" class="form-control mb-2"
-                                placeholder="Cari judul cerita..." autocomplete="off">
-                            <select id="global-ads-stories" name="cerita_ids[]" class="form-select" multiple size="8">
+                            <div class="input-group mb-2">
+                                <input type="text" id="global-ads-story-search" class="form-control"
+                                    placeholder="Cari judul cerita..." autocomplete="off">
+                                <button type="button" id="global-ads-story-search-button" class="btn btn-outline-primary">
+                                    <i class="icon-base bx bx-search me-1"></i> Cari
+                                </button>
+                                <button type="button" id="global-ads-story-reset-button" class="btn btn-outline-secondary">
+                                    Reset
+                                </button>
+                            </div>
+                            @php
+                                $selectedStoryIds = collect(old('cerita_ids', []))->map(fn ($id) => (string) $id);
+                            @endphp
+                            <div id="global-ads-selected-stories"></div>
+                            <div id="global-ads-stories" class="list-group border rounded overflow-auto"
+                                data-current-page="1" data-last-page="{{ $storyPickerLastPage }}" style="max-height:230px;">
                                 @foreach($globalCeritas as $globalCerita)
-                                    @php
-                                        $chapterTotal = max((int) $globalCerita->parts, count($globalCerita->isi_cerita ?? []));
-                                    @endphp
-                                    <option value="{{ $globalCerita->id }}" {{ collect(old('cerita_ids', []))->contains($globalCerita->id) ? 'selected' : '' }}>
-                                        {{ $globalCerita->judul }} ({{ $chapterTotal }} chapter)
-                                    </option>
+                                    <label class="list-group-item d-flex align-items-center gap-3">
+                                        <input type="checkbox" class="form-check-input m-0" value="{{ $globalCerita->id }}"
+                                            data-story-checkbox="1"
+                                            data-judul="{{ $globalCerita->judul }}"
+                                            data-parts="{{ (int) $globalCerita->parts }}"
+                                            {{ old('form_type') === 'global-ads' && $selectedStoryIds->contains((string) $globalCerita->id) ? 'checked' : '' }}>
+                                        <span class="flex-grow-1">{{ $globalCerita->judul }} ({{ (int) $globalCerita->parts }} chapter)</span>
+                                    </label>
                                 @endforeach
-                            </select>
-                            <small class="text-muted">Tahan Ctrl atau Cmd untuk memilih lebih dari satu judul.</small>
+                            </div>
+                            <div id="global-ads-story-pager" class="d-flex align-items-center justify-content-between gap-2 mt-2">
+                                <small id="global-ads-story-count" class="text-muted">0 dipilih</small>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Pagination judul cerita">
+                                    <button type="button" class="btn btn-outline-secondary" data-story-prev>Prev</button>
+                                    <button type="button" class="btn btn-outline-secondary disabled" data-story-page-label>Halaman 1 / {{ $storyPickerLastPage }}</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-story-next>Next</button>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-md-6">
@@ -297,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </form>
                 @endif
             </div>
-            @if($globalAds->isNotEmpty() && $globalCeritas->isNotEmpty())
+            @if($globalAds->isNotEmpty() && $hasCeritas)
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" form="global-ads-form" id="global-ads-submit" class="btn btn-primary">

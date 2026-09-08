@@ -5,7 +5,7 @@
         return [
             'id' => (int) $cerita->id,
             'title' => $cerita->judul,
-            'chapter_total' => max((int) $cerita->parts, count($cerita->isi_cerita ?? [])),
+            'chapter_total' => max((int) $cerita->parts, 0),
         ];
     })->values();
     $storiesById = $placementStories->keyBy('id');
