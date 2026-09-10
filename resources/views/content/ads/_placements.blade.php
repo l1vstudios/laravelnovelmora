@@ -116,7 +116,7 @@
                 </div>
                 <div class="col-md-1">
                     <button type="button" id="placement-add" class="btn btn-primary w-100">
-                        <i class="icon-base bx bx-plus me-1"></i> Tambah
+                        <i class="icon-base bx bx-plus me-1"></i> +
                     </button>
                 </div>
             </div>
