@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ad;
 use App\Models\Cerita;
 use App\Models\CeritaAd;
+use App\Models\Kategori;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -63,8 +64,9 @@ class AdsController extends Controller
     public function create()
     {
         $ceritas = $this->getPlacementCeritas();
+        $kategoris = $this->getPlacementKategoris();
 
-        return view('content.ads.create', compact('ceritas'));
+        return view('content.ads.create', compact('ceritas', 'kategoris'));
     }
 
     public function store(Request $request)
@@ -126,8 +128,9 @@ class AdsController extends Controller
     {
         $ad->load('placements');
         $ceritas = $this->getPlacementCeritas();
+        $kategoris = $this->getPlacementKategoris();
 
-        return view('content.ads.edit', compact('ad', 'ceritas'));
+        return view('content.ads.edit', compact('ad', 'ceritas', 'kategoris'));
     }
 
     public function update(Request $request, Ad $ad)
@@ -307,7 +310,12 @@ class AdsController extends Controller
 
     private function getPlacementCeritas()
     {
-        return Cerita::orderBy('judul')->get(['id', 'judul', 'parts']);
+        return Cerita::orderBy('judul')->get(['id', 'judul', 'parts', 'id_kategori']);
+    }
+
+    private function getPlacementKategoris()
+    {
+        return Kategori::orderBy('default_title')->get(['id', 'default_title']);
     }
 
     private function storyOptionsResponse(Request $request)

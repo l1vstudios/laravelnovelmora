@@ -1,11 +1,18 @@
 @php
     $selectedPlacements = old('placements', $selectedPlacements ?? []);
     $globalFlags = old('placement_global', []);
+    $placementCategories = ($kategoris ?? collect())->map(function ($kategori) {
+        return [
+            'id' => (int) $kategori->id,
+            'title' => $kategori->default_title,
+        ];
+    })->values();
     $placementStories = $ceritas->map(function ($cerita) {
         return [
             'id' => (int) $cerita->id,
             'title' => $cerita->judul,
             'chapter_total' => max((int) $cerita->parts, 0),
+            'category_id' => $cerita->id_kategori ? (int) $cerita->id_kategori : null,
         ];
     })->values();
     $storiesById = $placementStories->keyBy('id');
@@ -66,7 +73,16 @@
             </div>
 
             <div class="row g-4 align-items-end">
-                <div class="col-md-5">
+                <div class="col-md-3">
+                    <label class="form-label">Kategori</label>
+                    <select id="placement-category" class="form-select">
+                        <option value="">Semua kategori</option>
+                        @foreach($placementCategories as $category)
+                            <option value="{{ $category['id'] }}">{{ $category['title'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <label class="form-label">Judul Novel</label>
                     <div class="position-relative">
                         <input type="text" id="placement-story-search" class="form-control" placeholder="Cari judul novel..." autocomplete="off">
@@ -80,7 +96,7 @@
                         <option value="before">Sebelum</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Chapter</label>
                     <div class="position-relative">
                         <input type="text" id="placement-chapter-search" class="form-control" placeholder="Pilih novel dulu" autocomplete="off" disabled>
@@ -107,12 +123,14 @@
 <script>
 (function () {
     const stories = @json($placementStories);
+    const categories = @json($placementCategories);
     const initialPlacements = @json($initialPlacements);
     const selected = [];
     let nextPlacementKey = 0;
     let selectedStory = null;
     let selectedChapters = new Set();
 
+    const categoryInput = document.getElementById('placement-category');
     const storyInput = document.getElementById('placement-story-search');
     const storyMenu = document.getElementById('placement-story-menu');
     const allStoriesInput = document.getElementById('placement-all-stories');
@@ -149,17 +167,41 @@
         return allStoriesInput.checked;
     }
 
+    function selectedCategoryId() {
+        return categoryInput.value ? Number(categoryInput.value) : null;
+    }
+
+    function selectedCategoryTitle() {
+        const category = categories.find((item) => item.id === selectedCategoryId());
+
+        return category ? category.title : '';
+    }
+
+    function filteredStories() {
+        const categoryId = selectedCategoryId();
+
+        if (!categoryId) {
+            return stories;
+        }
+
+        return stories.filter((story) => story.category_id === categoryId);
+    }
+
     function eligibleStories(chapter) {
         if (!selectedAllStories()) {
             return selectedStory && chapter <= selectedStory.chapter_total ? [selectedStory] : [];
         }
 
-        return stories.filter((story) => chapter <= story.chapter_total);
+        return filteredStories().filter((story) => chapter <= story.chapter_total);
     }
 
     function chapterLimit() {
         if (selectedAllStories()) {
-            return Math.max(...stories.map((story) => story.chapter_total));
+            const categoryStories = filteredStories();
+
+            return categoryStories.length
+                ? Math.max(...categoryStories.map((story) => story.chapter_total))
+                : 0;
         }
 
         return selectedStory ? selectedStory.chapter_total : 0;
@@ -171,7 +213,10 @@
         }
 
         const needle = search.trim().toLowerCase();
-        const filtered = stories.filter((story) => story.title.toLowerCase().includes(needle));
+        const filtered = filteredStories().filter((story) => story.title.toLowerCase().includes(needle));
+        const emptyMessage = selectedCategoryId()
+            ? 'Novel tidak ditemukan untuk kategori ini.'
+            : 'Novel tidak ditemukan.';
 
         storyMenu.innerHTML = filtered.length
             ? filtered.map((story) => `
@@ -180,7 +225,7 @@
                     <small class="text-muted d-block">${story.chapter_total} chapter</small>
                 </button>
             `).join('')
-            : '<span class="dropdown-item-text text-muted">Novel tidak ditemukan.</span>';
+            : `<span class="dropdown-item-text text-muted">${emptyMessage}</span>`;
 
         showMenu(storyMenu);
     }
@@ -189,6 +234,8 @@
         const limit = chapterLimit();
 
         if (!limit) {
+            chapterMenu.innerHTML = '<span class="dropdown-item-text text-muted">Chapter tidak tersedia.</span>';
+            showMenu(chapterMenu);
             return;
         }
 
@@ -247,6 +294,17 @@
         chapterMenu.innerHTML = '';
     }
 
+    function resetStoryPicker() {
+        selectedStory = null;
+        storyInput.value = selectedAllStories()
+            ? (selectedCategoryId() ? `Semua cerita - ${selectedCategoryTitle()}` : 'Semua cerita')
+            : '';
+        storyInput.disabled = selectedAllStories();
+        storyInput.dataset.storyId = '';
+        hideMenus();
+        resetChapterPicker();
+    }
+
     function updateChapterInputLabel() {
         if (!selectedChapters.size) {
             chapterInput.value = '';
@@ -266,6 +324,10 @@
         });
     });
     renderSelected();
+
+    categoryInput.addEventListener('change', () => {
+        resetStoryPicker();
+    });
 
     storyInput.addEventListener('focus', () => renderStoryMenu(storyInput.value));
     storyInput.addEventListener('input', () => {
@@ -289,12 +351,7 @@
     });
 
     allStoriesInput.addEventListener('change', () => {
-        selectedStory = null;
-        storyInput.value = selectedAllStories() ? 'Semua cerita' : '';
-        storyInput.disabled = selectedAllStories();
-        storyInput.dataset.storyId = '';
-        hideMenus();
-        resetChapterPicker();
+        resetStoryPicker();
     });
 
     positionInput.addEventListener('change', () => {

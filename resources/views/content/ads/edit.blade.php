@@ -78,7 +78,7 @@
                                 <label class="form-check-label" for="status">Status Aktif</label>
                             </div>
                         </div>
-                        @include('content.ads._placements', ['ceritas' => $ceritas, 'selectedPlacements' => $selectedPlacements])
+                        @include('content.ads._placements', ['ceritas' => $ceritas, 'kategoris' => $kategoris, 'selectedPlacements' => $selectedPlacements])
                     </div>
                     <div class="d-flex gap-3 mt-6">
                         <button type="submit" class="btn btn-primary"><i class="icon-base bx bx-save me-1"></i> Perbarui</button>
