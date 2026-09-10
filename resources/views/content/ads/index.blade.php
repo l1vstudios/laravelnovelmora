@@ -446,10 +446,10 @@ document.addEventListener('DOMContentLoaded', function () {
 <div class="modal fade" id="global-ads-modal" tabindex="-1" aria-labelledby="global-ads-modal-title" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
+            {{-- <div class="modal-header">
                 <h5 class="modal-title" id="global-ads-modal-title">Set Ads Global</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-            </div>
+            </div> --}}
             <div class="modal-body">
                 @if($globalAds->isEmpty() || ! $hasCeritas)
                     <div class="alert alert-info mb-0">Master ads atau cerita belum tersedia.</div>
