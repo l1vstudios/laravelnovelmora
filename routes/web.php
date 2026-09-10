@@ -68,6 +68,8 @@ Route::middleware('auth')->group(function () {
 
         Route::put('ads/global-placements', [AdsController::class, 'globalPlacements'])
             ->name('ads.global-placements');
+        Route::put('ads/{ad}/reset-placements', [AdsController::class, 'resetPlacements'])
+            ->name('ads.reset-placements');
         Route::resource('ads', AdsController::class);
 
         Route::resource('reward-types', RewardTypeController::class)

@@ -25,9 +25,15 @@
                 <a href="{{ route('ads.index') }}" class="btn btn-outline-secondary btn-sm"><i class="icon-base bx bx-arrow-back me-1"></i> Kembali</a>
             </div>
             <div class="card-body">
+                @if(session('success'))
+                <div class="alert alert-success alert-dismissible mb-6">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+                @endif
                 @if($errors->any())
                 <div class="alert alert-danger alert-dismissible mb-6"><ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
                 @endif
+                <form id="ads-reset-placements-form" action="{{ route('ads.reset-placements', $ad) }}" method="POST" data-confirm="Reset semua konfigurasi ads ini dari semua judul? Master ads dan media tidak akan dihapus.">
+                    @csrf @method('PUT')
+                </form>
                 <form action="{{ route('ads.update', $ad) }}" method="POST" enctype="multipart/form-data">
                     @csrf @method('PUT')
                     <div class="row g-5">
@@ -77,6 +83,9 @@
                     <div class="d-flex gap-3 mt-6">
                         <button type="submit" class="btn btn-primary"><i class="icon-base bx bx-save me-1"></i> Perbarui</button>
                         <a href="{{ route('ads.index') }}" class="btn btn-outline-secondary">Batal</a>
+                        <button type="submit" form="ads-reset-placements-form" class="btn btn-outline-danger ms-auto">
+                            <i class="icon-base bx bx-reset me-1"></i> Reset Konfigurasi
+                        </button>
                     </div>
                 </form>
             </div>

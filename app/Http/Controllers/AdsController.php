@@ -192,6 +192,23 @@ class AdsController extends Controller
         return redirect()->route('ads.index')->with('success', 'Ads berhasil dihapus.');
     }
 
+    public function resetPlacements(Ad $ad)
+    {
+        $placementsQuery = CeritaAd::where('ad_id', $ad->id);
+        $storyCount = (clone $placementsQuery)->distinct()->count('cerita_id');
+        $placementCount = $placementsQuery->delete();
+
+        if ($placementCount === 0) {
+            return redirect()
+                ->route('ads.edit', $ad)
+                ->with('success', 'Ads ini belum memiliki konfigurasi pada judul mana pun.');
+        }
+
+        return redirect()
+            ->route('ads.edit', $ad)
+            ->with('success', 'Konfigurasi ads berhasil direset dari '.$storyCount.' judul ('.$placementCount.' posisi).');
+    }
+
     public function globalPlacements(Request $request)
     {
         $data = $request->validate([
