@@ -339,9 +339,6 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <h5 class="mb-0">Master Ads</h5>
                 <div class="d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#global-ads-modal">
-                        <i class="icon-base bx bx-world me-1"></i> Set Ads Global
-                    </button>
                     <a href="{{ route('ads.create') }}" class="btn btn-primary">
                         <i class="icon-base bx bx-plus me-1"></i> Tambah Ads
                     </a>

@@ -61,6 +61,17 @@
 @endphp
 
 <div class="col-12">
+    <style>
+        #placement-chapter-menu {
+            min-width: 18rem;
+            width: max-content;
+            max-width: min(32rem, calc(100vw - 3rem));
+        }
+
+        #placement-chapter-menu .dropdown-item {
+            white-space: nowrap;
+        }
+    </style>
     <h6 class="mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em;">Hubungkan ke Chapter</h6>
 
     @if($placementStories->isEmpty())
@@ -96,14 +107,14 @@
                         <option value="before">Sebelum</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label">Chapter</label>
                     <div class="position-relative">
                         <input type="text" id="placement-chapter-search" class="form-control" placeholder="Pilih novel dulu" autocomplete="off" disabled>
-                        <div id="placement-chapter-menu" class="dropdown-menu w-100 mt-1" style="max-height:220px;overflow:auto;"></div>
+                        <div id="placement-chapter-menu" class="dropdown-menu mt-1" style="max-height:220px;overflow:auto;"></div>
                     </div>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-1">
                     <button type="button" id="placement-add" class="btn btn-primary w-100">
                         <i class="icon-base bx bx-plus me-1"></i> Tambah
                     </button>
