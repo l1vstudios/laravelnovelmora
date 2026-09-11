@@ -21,6 +21,7 @@
                             <td>{{ $loop->iteration + ($versis->currentPage() - 1) * $versis->perPage() }}</td>
                             <td><span class="fw-medium">{{ $versi->version_name }}</span></td>
                             <td><span class="badge bg-label-primary">{{ $versi->version_code }}</span></td>
+                            <td><span class="badge bg-label-primary">{{ $versi->device_type }}</span></td>
                             <td>{{ $versi->created_at ? $versi->created_at->format('d M Y') : '-' }}</td>
                             <td>
                                 <div class="dropdown">
