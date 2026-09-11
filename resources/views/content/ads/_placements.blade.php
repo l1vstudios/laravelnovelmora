@@ -328,6 +328,41 @@
             : `${chapters.length} chapter dipilih`;
     }
 
+    function hasPlacement(storyId, position, chapter) {
+        return selected.some((item) => Number(item.story_id) === Number(storyId)
+            && item.position === position
+            && Number(item.chapter) === Number(chapter));
+    }
+
+    function addPendingPlacements() {
+        if ((!selectedStory && !selectedAllStories()) || !selectedChapters.size) {
+            return false;
+        }
+
+        const position = positionInput.value;
+        let added = false;
+
+        selectedChapters.forEach((chapter) => {
+            eligibleStories(chapter).forEach((story) => {
+                if (hasPlacement(story.id, position, chapter)) {
+                    return;
+                }
+
+                selected.push({
+                    row_key: ++nextPlacementKey,
+                    story_id: story.id,
+                    story_title: story.title,
+                    position,
+                    chapter,
+                    is_global: selectedAllStories(),
+                });
+                added = true;
+            });
+        });
+
+        return added;
+    }
+
     initialPlacements.forEach((item) => {
         selected.push({
             ...item,
@@ -390,25 +425,7 @@
     });
 
     addButton.addEventListener('click', () => {
-        if ((!selectedStory && !selectedAllStories()) || !selectedChapters.size) {
-            return;
-        }
-
-        const position = positionInput.value;
-
-        selectedChapters.forEach((chapter) => {
-            eligibleStories(chapter).forEach((story) => {
-                selected.push({
-                    row_key: ++nextPlacementKey,
-                    story_id: story.id,
-                    story_title: story.title,
-                    position,
-                    chapter,
-                    is_global: selectedAllStories(),
-                });
-            });
-        });
-
+        addPendingPlacements();
         renderSelected();
         resetChapterPicker();
     });
@@ -426,6 +443,14 @@
             hideMenus();
         }
     });
+
+    const form = document.getElementById('ads-placement-picker').closest('form');
+    if (form) {
+        form.addEventListener('submit', () => {
+            addPendingPlacements();
+            renderSelected();
+        });
+    }
 })();
 </script>
 @endif
