@@ -2,10 +2,10 @@
 
 use App\Http\Controllers\AdsController;
 use App\Http\Controllers\AnalyticsController;
-use App\Http\Controllers\EarningController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CeritaController;
 use App\Http\Controllers\DailyRewardController;
+use App\Http\Controllers\EarningController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\FiturStoreController;
 use App\Http\Controllers\GeneralController;
@@ -122,6 +122,7 @@ Route::middleware('auth')->group(function () {
 
         // Analitik
         Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
+        Route::get('/analytics/details', [AnalyticsController::class, 'details'])->name('analytics.details');
 
         // Earning
         Route::get('/earning', [EarningController::class, 'index'])->name('earning.index');

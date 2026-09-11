@@ -285,7 +285,7 @@
             <table class="table table-hover mb-0" data-grid-sortable="false">
               <thead>
                 <tr>
-                  <th>
+                  <th>#</th>
                   <th>Judul</th>
                   <th>Part</th>
                   <th>Dibaca</th>
@@ -297,7 +297,8 @@
             </table>
           </div>
         </div>
-        <div class="modal-footer border-0">
+        <div class="modal-footer border-0 d-flex justify-content-between">
+          <small id="detailModalInfo" class="text-muted"></small>
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
         </div>
       </div>
@@ -334,71 +335,21 @@
   $jsKategori = $byKategori
       ->map(function ($k) {
           return [
+              'id' => $k->id,
               'label' => $k->default_title,
-              'ceritas' => $k->ceritas
-                  ->map(function ($c) {
-                      return [
-                          'id' => $c->id,
-                          'judul' => $c->judul,
-                          'total_read' => $c->total_read,
-                          'total_vote' => $c->total_vote,
-                          'parts' => $c->parts,
-                      ];
-                  })
-                  ->values()
-                  ->toArray(),
+              'total' => (int) $k->total,
+              'group' => 'category',
+              'value' => $k->id,
           ];
       })
       ->values()
       ->toArray();
-  $jsAktif = $ceritaAktif
-      ->map(function ($c) {
-          return [
-              'id' => $c->id,
-              'judul' => $c->judul,
-              'total_read' => $c->total_read,
-              'total_vote' => $c->total_vote,
-              'parts' => $c->parts,
-          ];
-      })
-      ->values()
-      ->toArray();
-  $jsNonaktif = $ceritaNonaktif
-      ->map(function ($c) {
-          return [
-              'id' => $c->id,
-              'judul' => $c->judul,
-              'total_read' => $c->total_read,
-              'total_vote' => $c->total_vote,
-              'parts' => $c->parts,
-          ];
-      })
-      ->values()
-      ->toArray();
-  $jsRekomen = $ceritaRekomen
-      ->map(function ($c) {
-          return [
-              'id' => $c->id,
-              'judul' => $c->judul,
-              'total_read' => $c->total_read,
-              'total_vote' => $c->total_vote,
-              'parts' => $c->parts,
-          ];
-      })
-      ->values()
-      ->toArray();
-  $jsNonRekomen = $ceritaNonRekomen
-      ->map(function ($c) {
-          return [
-              'id' => $c->id,
-              'judul' => $c->judul,
-              'total_read' => $c->total_read,
-              'total_vote' => $c->total_vote,
-              'parts' => $c->parts,
-          ];
-      })
-      ->values()
-      ->toArray();
+  $jsStatus = $statusGroups->values()->toArray();
+  $jsRekomen = $rekomenGroups->values()->toArray();
+  $activeFilters = array_filter(
+      ['year' => $year, 'month' => $month, 'week' => $week],
+      fn($value) => $value !== null && $value !== '',
+  );
 @endphp
 @section('page-script')
   <script>
@@ -406,49 +357,95 @@
       const isDark = document.documentElement.classList.contains('dark-style');
       const textColor = isDark ? '#a1aab2' : '#697a8d';
       const gridColor = isDark ? '#434968' : '#eceef1';
+      const detailUrl = @json(route('analytics.details'));
+      const activeFilters = @json($activeFilters);
       const topReadCeritas = @json($jsTopRead);
       const topVoteCeritas = @json($jsTopVote);
       const kategoriGroups = @json($jsKategori);
-      const statusGroups = [{
-          label: 'Aktif',
-          ceritas: @json($jsAktif)
-        },
-        {
-          label: 'Nonaktif',
-          ceritas: @json($jsNonaktif)
-        },
-      ];
-      const rekomenGroups = [{
-          label: 'Rekomendasi',
-          ceritas: @json($jsRekomen)
-        },
-        {
-          label: 'Tidak',
-          ceritas: @json($jsNonRekomen)
-        },
-      ];
+      const statusGroups = @json($jsStatus);
+      const rekomenGroups = @json($jsRekomen);
 
-      function showModal(title, ceritas) {
-        document.getElementById('detailModalTitle').textContent = title;
-        const tbody = document.getElementById('detailModalBody');
+      function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, char => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        })[char]);
+      }
+
+      function modalInstance() {
+        return bootstrap.Modal.getOrCreateInstance(document.getElementById('detailModal'));
+      }
+
+      function renderModalRows(ceritas) {
         if (!ceritas || ceritas.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data.</td></tr>';
-        } else {
-          tbody.innerHTML = ceritas.map((c, i) => `
-                <tr>
-                    <td>${i + 1}</td>
-                    <td><span class="fw-medium">${c.judul}</span></td>
-                    <td>${c.parts}</td>
-                    <td>${Number(c.total_read).toLocaleString()}</td>
-                    <td>${Number(c.total_vote).toLocaleString()}</td>
-                    <td><a href="/cerita/${c.id}" class="btn btn-sm btn-outline-primary">Detail</a></td>
-                </tr>`).join('');
+          return '<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data.</td></tr>';
         }
-        new bootstrap.Modal(document.getElementById('detailModal')).show();
+
+        return ceritas.map((c, i) => `
+            <tr>
+                <td>${i + 1}</td>
+                <td><span class="fw-medium">${escapeHtml(c.judul)}</span></td>
+                <td>${Number(c.parts || 0).toLocaleString()}</td>
+                <td>${Number(c.total_read || 0).toLocaleString()}</td>
+                <td>${Number(c.total_vote || 0).toLocaleString()}</td>
+                <td><a href="/cerita/${encodeURIComponent(c.id)}" class="btn btn-sm btn-outline-primary">Detail</a></td>
+            </tr>`).join('');
+      }
+
+      function showModal(title, ceritas, info = '') {
+        document.getElementById('detailModalTitle').textContent = title;
+        document.getElementById('detailModalBody').innerHTML = renderModalRows(ceritas);
+        document.getElementById('detailModalInfo').textContent = info;
+        modalInstance().show();
+      }
+
+      function showLoadingModal(title) {
+        document.getElementById('detailModalTitle').textContent = title;
+        document.getElementById('detailModalBody').innerHTML =
+          '<tr><td colspan="6" class="text-center py-4 text-muted">Memuat data...</td></tr>';
+        document.getElementById('detailModalInfo').textContent = '';
+        modalInstance().show();
+      }
+
+      async function loadGroupModal(title, group) {
+        showLoadingModal(title);
+
+        const params = new URLSearchParams({
+          ...activeFilters,
+          group: group.group,
+          value: group.value
+        });
+
+        try {
+          const response = await fetch(`${detailUrl}?${params.toString()}`, {
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Gagal memuat data.');
+          }
+
+          const payload = await response.json();
+          const info = payload.truncated ?
+            `Menampilkan ${Number(payload.limit).toLocaleString()} teratas dari ${Number(payload.total).toLocaleString()} cerita` :
+            `${Number(payload.total).toLocaleString()} cerita`;
+
+          showModal(title, payload.ceritas, info);
+        } catch (error) {
+          document.getElementById('detailModalBody').innerHTML =
+            '<tr><td colspan="6" class="text-center py-4 text-danger">Data belum bisa dimuat.</td></tr>';
+          document.getElementById('detailModalInfo').textContent = '';
+        }
       }
 
       function shortLabel(str) {
-        return str.length > 18 ? str.slice(0, 18) + '…' : str;
+        const label = String(str || '');
+        return label.length > 18 ? label.slice(0, 18) + '…' : label;
       }
       new ApexCharts(document.getElementById('chartTopRead'), {
         chart: {
@@ -561,11 +558,11 @@
           events: {
             dataPointSelection(e, ctx, cfg) {
               const g = kategoriGroups[cfg.dataPointIndex];
-              showModal(`Kategori: ${g.label}`, g.ceritas);
+              loadGroupModal(`Kategori: ${g.label}`, g);
             }
           }
         },
-        series: kategoriGroups.map(g => g.ceritas.length),
+        series: kategoriGroups.map(g => g.total),
         labels: kategoriGroups.map(g => g.label),
         colors: ['#696cff', '#03c3ec', '#71dd37', '#ffab00', '#ff3e1d', '#8592a3'],
         legend: {
@@ -596,11 +593,11 @@
           events: {
             dataPointSelection(e, ctx, cfg) {
               const g = statusGroups[cfg.dataPointIndex];
-              showModal(`Status: ${g.label}`, g.ceritas);
+              loadGroupModal(`Status: ${g.label}`, g);
             }
           }
         },
-        series: statusGroups.map(g => g.ceritas.length),
+        series: statusGroups.map(g => g.total),
         labels: statusGroups.map(g => g.label),
         colors: ['#71dd37', '#8592a3'],
         legend: {
@@ -620,11 +617,11 @@
           events: {
             dataPointSelection(e, ctx, cfg) {
               const g = rekomenGroups[cfg.dataPointIndex];
-              showModal(`Rekomendasi: ${g.label}`, g.ceritas);
+              loadGroupModal(`Rekomendasi: ${g.label}`, g);
             }
           }
         },
-        series: rekomenGroups.map(g => g.ceritas.length),
+        series: rekomenGroups.map(g => g.total),
         labels: rekomenGroups.map(g => g.label),
         colors: ['#ffab00', '#8592a3'],
         legend: {
