@@ -14,7 +14,7 @@
             </div>
             <div class="table-responsive text-nowrap">
                 <table class="table table-hover">
-                    <thead><tr><th>#</th><th>Nama Versi</th><th>Kode Versi</th><th>Dibuat</th><th>Aksi</th></tr></thead>
+                    <thead><tr><th>#</th><th>Nama Versi</th><th>Kode Versi</th><th>Device</th><th>Dibuat</th><th>Aksi</th></tr></thead>
                     <tbody class="table-border-bottom-0">
                         @forelse($versis as $versi)
                         <tr>
